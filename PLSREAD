@@ -1,0 +1,4 @@
+Before you run, you may have to select serial port in the bottom right.
+There is commented-out code at lines 54 and 55 in Tester.ino which power the motor connected to port 4.
+Uncomment these if you want to test the motor, and change the speed value if you wish.
+Message me for any other help you may need.
