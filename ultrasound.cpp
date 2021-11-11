@@ -3,80 +3,70 @@
 #include "robot.h"
 #include "ultrasound.h"
 
-UltrasoundSensor::UltrasoundSensor(pin_size_t _ultrasound_out, pin_size_t _ultrasound_in)
+UltrasoundSensor::UltrasoundSensor(pin_size_t _ultrasound_trig, pin_size_t _ultrasound_echo)
 {
-    ultrasound_out = _ultrasound_out;
-    ultrasound_in = _ultrasound_in;
+    ultrasound_trig = _ultrasound_trig;
+    ultrasound_echo = _ultrasound_echo;
 
-    pinMode(ultrasound_out, OUTPUT);
-    pinMode(ultrasound_in, INPUT);
+    pinMode(ultrasound_trig, OUTPUT);
+    pinMode(ultrasound_echo, INPUT);
 
     enabled = false;
     distance = ULONG_MAX;
-
-    status = RESET;
+    t = micros();
 }
 
 void UltrasoundSensor::Tick()
 {
-    if (enabled)
+    // It's required to run the entire detection in one cycle because
+    // the Arduino runs slowly enough that a single loop may miss any of the
+    // timings required by this sensor. It operates on the order of microseconds,
+    // and the Arduino, if it executes a lot of lines in a tick (which it will),
+    // operates in 100s of microseconds to milliseconds.
+
+    bool reset = false;
+
+    // Delay considered here; just don't run if it's too soon
+    if (enabled && micros() - t > DELAY_WAIT_LENGTH)
     {
-        switch (status)
+        // Send a pulse of 10 us by waiting using delayMicroseconds function
+        digitalWrite(ultrasound_trig, HIGH);
+        delayMicroseconds(TRIGGER_INPUT_PULSE_LENGTH);
+        digitalWrite(ultrasound_trig, LOW);
+
+        // Use while loops to delay until digital input changes
+        t = micros();
+        while (digitalRead(ultrasound_echo) == LOW)
         {
-            case RESET:
-                t = micros();
-                digitalWrite(ULTRASOUND_OUT, HIGH);
-                status = TRIGGER_INPUT;
+            // This break system is for if the return signal never comes
+            if (micros() - t > TIMEOUT_LENGTH)
+            {
+                reset = true;
                 break;
-            
-            case TRIGGER_INPUT:
-                if (t - micros() > TRIGGER_INPUT_PULSE_LENGTH)
-                {
-                    digitalWrite(ULTRASOUND_OUT, LOW);
-                    status = AWAITING_RESPONSE;
-                }
-                break;
-            
-            case AWAITING_RESPONSE:
-                if (digitalRead(ULTRASOUND_IN) == HIGH)
-                {
-                    t = micros();
-                    status = TIMING_RESPONSE;
-                }
-                break;
-            
-            case TIMING_RESPONSE:
-                if (digitalRead(ULTRASOUND_IN) == LOW)
-                {
-                    distance = (unsigned long) ((double) (t - micros()) / 5.8f);
-                    status = DELAY;
-                }
-                break;
-            
-            case DELAY:
-                if (t - micros() > DELAY_WAIT_LENGTH)
-                {
-                    status = RESET;
-                }
-                break;
-            
-            default: break;
+            }
         }
+        t = micros();
+        if (!reset)
+        {
+            while (digitalRead(ultrasound_echo) == HIGH);
+
+            distance = (unsigned long) ((double) (micros() - t) / DISTANCE_CONVERSION_DIVISOR);
+            t = micros();
+        }
+        else reset = false;
     }
 }
 
 void UltrasoundSensor::Enable()
 {
     enabled = true;
-    status = RESET;
 }
 
 void UltrasoundSensor::Disable()
 {
     enabled = false;
     distance = ULONG_MAX;
-    digitalWrite(ULTRASOUND_OUT, LOW);
-    status = RESET;
+    digitalWrite(ultrasound_trig, LOW);
 }
 
 unsigned long UltrasoundSensor::GetDistance()

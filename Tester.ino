@@ -23,15 +23,15 @@ Adafruit_DCMotor *pMotor = AFSM.getMotor(4);
 
 configuration_t Configuration = ULTRASOUND;     // Keep it like this to test the ultrasound; check pins in ultrasound.h file.
 
-UltrasoundSensor mySensor = UltrasoundSensor(ULTRASOUND_OUT, ULTRASOUND_IN);
+UltrasoundSensor mySensor = UltrasoundSensor(ULTRASOUND_TRIG, ULTRASOUND_ECHO);
 
 void setup() {
   switch (Configuration)
   {
   case TEST_STARTER:
     // declare the ledPin as an OUTPUT:
-    pinMode(ledPin, OUTPUT);
-    digitalWrite(ledPin, LOW);
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, LOW);
     ledOn = false;
     Serial.begin(9600);
 
@@ -46,6 +46,7 @@ void setup() {
     Serial.begin(DEFAULT_BAUD_RATE);
 
     mySensor.Enable();
+    t = micros();
     break;
 
   default: break;
@@ -58,19 +59,19 @@ void loop() {
     case TEST_STARTER:
       // read the value from the sensor:
       sensorValue = analogRead(sensorPin);
-      Serial.println(sensorValue);
+      //Serial.println(sensorValue);
       //Serial.println(millis() - t);
       
       if ((millis() - t) > 250 && !ledOn)
       {
-        digitalWrite(ledPin, HIGH);
-        //Serial.println("HIGH");
+        digitalWrite(LED_BUILTIN, HIGH);
+        Serial.println("HIGH");
         ledOn = true;
       }
       else if ((millis() - t) > 500 && ledOn)
       {
-        digitalWrite(ledPin, LOW);
-        //Serial.println("LOW");
+        digitalWrite(LED_BUILTIN, LOW);
+        Serial.println("LOW");
         ledOn = false;
         t = millis();
       }
@@ -79,8 +80,7 @@ void loop() {
     case ULTRASOUND:
       mySensor.Tick();
 
-      Serial.print(mySensor.GetDistance());
-      Serial.print(" mm\n");
+      Serial.println(mySensor.GetDistance());
       break;
     
     default: break;

@@ -1,18 +1,11 @@
-#define     ULTRASOUND_OUT      14      // Digital I/O output pin
-#define     ULTRASOUND_IN       15      // Digital I/O input pin
+#define     ULTRASOUND_TRIG     1      // Digital I/O output pin
+#define     ULTRASOUND_ECHO     2      // Digital I/O input pin
 
 #define     TRIGGER_INPUT_PULSE_LENGTH      10      // Length of trigger pulse in microseconds
 #define     DELAY_WAIT_LENGTH               60000   // Length of delay in microseconds
+#define     TIMEOUT_LENGTH                  20000   // Length before sensor times out
+#define     DISTANCE_CONVERSION_DIVISOR     5.8f    // To calibrate distance calculation. Change as needed
 
-
-enum status_t
-{
-    RESET = 0,              // Ready to start again
-    TRIGGER_INPUT = 1,      // Sending pulse to trigger input
-    AWAITING_RESPONSE = 2,  // Wait until response starts
-    TIMING_RESPONSE = 3,    // Measure response time
-    DELAY = 4               // Wait for a while before starting again
-};
 
 // https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf
 class UltrasoundSensor
@@ -20,12 +13,10 @@ class UltrasoundSensor
     private:
         bool enabled;
         unsigned long distance;     // Distance in millimetres
-
         unsigned long t;            // Timer using microseconds (lasts ~5 hours)
-        status_t status;
 
-        pin_size_t ultrasound_out;
-        pin_size_t ultrasound_in;
+        pin_size_t ultrasound_trig;
+        pin_size_t ultrasound_echo;
     
     public:
         // You pass the out/in pins for the sensor
