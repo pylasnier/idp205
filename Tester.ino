@@ -44,8 +44,8 @@ void setup() {
     t = millis();
 
     AFSM.begin();
-    //leftMotor->setSpeed(150);
-    //leftMotor->run(FORWARD);
+    leftMotor->setSpeed(150);
+    leftMotor->run(FORWARD);
     break;
 
   case ULTRASOUND:
@@ -61,6 +61,10 @@ void setup() {
     rightMotor->setSpeed(150);
     leftMotor->run(FORWARD);
     rightMotor->run(FORWARD);
+
+    pinMode(12, OUTPUT);
+    digitalWrite(12, LOW);
+    ledOn = false;
     break;
   
   case LINE_SENSOR:
@@ -106,7 +110,22 @@ void loop() {
       break;
     
     case MOVING:
+      if (line1.Line())
+      {
+        RightMotorSpeed(1);
 
+        digitalWrite(12, HIGH);
+        //Serial.println("HIGH");
+        ledOn = true;
+      }
+      else
+      {
+        RightMotorSpeed(150);
+
+        digitalWrite(12, LOW);
+        //Serial.println("LOW");
+        ledOn = false;
+      }
       break;
 
     case LINE_SENSOR:
