@@ -65,6 +65,11 @@ void setup() {
   
   case LINE_SENSOR:
     Serial.begin(DEFAULT_BAUD_RATE);
+
+    // declare the ledPin as an OUTPUT:
+    pinMode(12, OUTPUT);
+    digitalWrite(12, LOW);
+    ledOn = false;
     break;
   default: break;
   }
@@ -102,6 +107,20 @@ void loop() {
     
     case LINE_SENSOR:
       Serial.println(line1.Line());
+      
+      if (line1.Line())
+      {
+        digitalWrite(12, HIGH);
+        //Serial.println("HIGH");
+        ledOn = true;
+      }
+      else
+      {
+        digitalWrite(12, LOW);
+        //Serial.println("LOW");
+        ledOn = false;
+      }
+      
       break;
     
     default: break;
