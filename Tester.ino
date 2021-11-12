@@ -5,6 +5,7 @@
 #include "robot.h"
 #include "ultrasound.h"
 #include "line_detection.h"
+#include "motor.cpp"
 
 enum configuration_t
 {
@@ -17,13 +18,12 @@ enum configuration_t
 int sensorPin = A0;    // select the input pin for the potentiometer
 int ledPin = 13;      // select the pin for the LED
 int sensorValue = 0;  // variable to store the value coming from the sensor
+int old_right_motor_speed;   // variable to store previous right motor speed
 
 unsigned long t; //To measure time
 bool ledOn;
 
-Adafruit_MotorShield AFSM = Adafruit_MotorShield();
-Adafruit_DCMotor *leftMotor = AFSM.getMotor(4);
-Adafruit_DCMotor *rightMotor = AFSM.getMotor(3);
+
 
 configuration_t Configuration = LINE_SENSOR;     // Keep it like this to test the ultrasound; check pins in ultrasound.h file.
 
@@ -105,9 +105,13 @@ void loop() {
       Serial.println(mySensor.GetDistance());
       break;
     
+    case MOVING:
+
+      break;
+
     case LINE_SENSOR:
       Serial.println(line1.Line());
-      
+
       if (line1.Line())
       {
         digitalWrite(12, HIGH);
