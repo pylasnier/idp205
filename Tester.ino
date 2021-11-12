@@ -4,12 +4,14 @@
 
 #include "robot.h"
 #include "ultrasound.h"
+#include "line_detection.h"
 
 enum configuration_t
 {
   TEST_STARTER = 0,
   ULTRASOUND = 1,
-  MOVING = 2
+  MOVING = 2,
+  LINE_SENSOR = 3
 };
 
 int sensorPin = A0;    // select the input pin for the potentiometer
@@ -23,9 +25,11 @@ Adafruit_MotorShield AFSM = Adafruit_MotorShield();
 Adafruit_DCMotor *leftMotor = AFSM.getMotor(4);
 Adafruit_DCMotor *rightMotor = AFSM.getMotor(3);
 
-configuration_t Configuration = MOVING;     // Keep it like this to test the ultrasound; check pins in ultrasound.h file.
+configuration_t Configuration = LINE_SENSOR;     // Keep it like this to test the ultrasound; check pins in ultrasound.h file.
 
 UltrasoundSensor mySensor = UltrasoundSensor(ULTRASOUND_TRIG, ULTRASOUND_ECHO);
+
+LineSensor line1 = LineSensor(A0);
 
 void setup() {
   switch (Configuration)
@@ -58,6 +62,10 @@ void setup() {
     leftMotor->run(FORWARD);
     rightMotor->run(FORWARD);
     break;
+  
+  case LINE_SENSOR:
+    Serial.begin(DEFAULT_BAUD_RATE);
+    break;
   default: break;
   }
 }
@@ -68,19 +76,19 @@ void loop() {
     case TEST_STARTER:
       // read the value from the sensor:
       sensorValue = analogRead(sensorPin);
-      //Serial.println(sensorValue);
+      Serial.println(sensorValue);
       //Serial.println(millis() - t);
       
       if ((millis() - t) > 250 && !ledOn)
       {
         digitalWrite(LED_BUILTIN, HIGH);
-        Serial.println("HIGH");
+        //Serial.println("HIGH");
         ledOn = true;
       }
       else if ((millis() - t) > 500 && ledOn)
       {
         digitalWrite(LED_BUILTIN, LOW);
-        Serial.println("LOW");
+        //Serial.println("LOW");
         ledOn = false;
         t = millis();
       }
@@ -90,6 +98,10 @@ void loop() {
       mySensor.Tick();
 
       Serial.println(mySensor.GetDistance());
+      break;
+    
+    case LINE_SENSOR:
+      Serial.println(line1.Line());
       break;
     
     default: break;
