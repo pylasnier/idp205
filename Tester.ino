@@ -8,7 +8,8 @@
 enum configuration_t
 {
   TEST_STARTER = 0,
-  ULTRASOUND = 1
+  ULTRASOUND = 1,
+  MOVING = 2
 };
 
 int sensorPin = A0;    // select the input pin for the potentiometer
@@ -19,9 +20,10 @@ unsigned long t; //To measure time
 bool ledOn;
 
 Adafruit_MotorShield AFSM = Adafruit_MotorShield();
-Adafruit_DCMotor *pMotor = AFSM.getMotor(4);
+Adafruit_DCMotor *leftMotor = AFSM.getMotor(4);
+Adafruit_DCMotor *rightMotor = AFSM.getMotor(3);
 
-configuration_t Configuration = ULTRASOUND;     // Keep it like this to test the ultrasound; check pins in ultrasound.h file.
+configuration_t Configuration = MOVING;     // Keep it like this to test the ultrasound; check pins in ultrasound.h file.
 
 UltrasoundSensor mySensor = UltrasoundSensor(ULTRASOUND_TRIG, ULTRASOUND_ECHO);
 
@@ -38,8 +40,8 @@ void setup() {
     t = millis();
 
     AFSM.begin();
-    //pMotor->setSpeed(150);
-    //pMotor->run(FORWARD);
+    //leftMotor->setSpeed(150);
+    //leftMotor->run(FORWARD);
     break;
 
   case ULTRASOUND:
@@ -49,6 +51,13 @@ void setup() {
     t = micros();
     break;
 
+  case MOVING:
+    AFSM.begin();
+    leftMotor->setSpeed(150);
+    rightMotor->setSpeed(150);
+    leftMotor->run(FORWARD);
+    rightMotor->run(FORWARD);
+    break;
   default: break;
   }
 }
