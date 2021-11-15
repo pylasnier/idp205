@@ -29,7 +29,6 @@ enum configuration_t
 int sensorPin = A0;    // select the input pin for the potentiometer
 int ledPin = 13;      // select the pin for the LED
 int sensorValue = 0;  // variable to store the value coming from the sensor
-int old_right_motor_speed;   // variable to store previous right motor speed
 
 unsigned long t; //To measure time
 bool ledOn;
