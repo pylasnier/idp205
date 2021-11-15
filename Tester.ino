@@ -1,3 +1,15 @@
+// IMPORTANT
+// The header included below sets definitions, the existence of which determine
+// whether or not this current file is included in compilation.
+// In this case, if TESTER is defined, this file will be included.
+// If not, it won't be. Most of the time, you just change the
+// definition in the header to the name of the .ino file you want
+// to use, and make sure to use an #ifdef #endif clause around the code.
+// Do remember also to change the sketch file in the bottom right.
+#include "project_defines.h"
+
+#ifdef TESTER
+
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
@@ -5,7 +17,6 @@
 #include "robot.h"
 #include "ultrasound.h"
 #include "line_detection.h"
-#include "motor.cpp"
 
 enum configuration_t
 {
@@ -23,9 +34,11 @@ int old_right_motor_speed;   // variable to store previous right motor speed
 unsigned long t; //To measure time
 bool ledOn;
 
+Adafruit_MotorShield AFSM = Adafruit_MotorShield();
+Adafruit_DCMotor *leftMotor = AFSM.getMotor(4);
+Adafruit_DCMotor *rightMotor = AFSM.getMotor(3);
 
-
-configuration_t Configuration = LINE_SENSOR;     // Keep it like this to test the ultrasound; check pins in ultrasound.h file.
+configuration_t Configuration = LINE_SENSOR;     // SET THIS TO MODE YOU WANT TO TEST
 
 UltrasoundSensor mySensor = UltrasoundSensor(ULTRASOUND_TRIG, ULTRASOUND_ECHO);
 
@@ -112,7 +125,7 @@ void loop() {
     case MOVING:
       if (line1.Line())
       {
-        RightMotorSpeed(1);
+        rightMotor->setSpeed(1);
 
         digitalWrite(12, HIGH);
         //Serial.println("HIGH");
@@ -120,7 +133,7 @@ void loop() {
       }
       else
       {
-        RightMotorSpeed(150);
+        rightMotor->setSpeed(150);
 
         digitalWrite(12, LOW);
         //Serial.println("LOW");
@@ -149,3 +162,5 @@ void loop() {
     default: break;
   }
 }
+
+#endif
