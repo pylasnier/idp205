@@ -10,6 +10,7 @@
 class Motion
 {
     private:
+        Adafruit_MotorShield *AFSM;
         Adafruit_DCMotor *leftMotor;
         Adafruit_DCMotor *rightMotor;
 
@@ -24,9 +25,11 @@ class Motion
         bool updated;
 
     public:
-        Motion(Adafruit_MotorShield, uint8_t, uint8_t);
+        Motion(Adafruit_MotorShield *, uint8_t, uint8_t);
         Motion(uint8_t, uint8_t);
         Motion();
+
+        void Begin();
 
         double GetDistance();
         double GetDeltaY();     // This functions returns distance travelled since it was last called

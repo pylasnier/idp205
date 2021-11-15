@@ -11,22 +11,19 @@
 
 Motion motion;
 Navigation navigation;
-unsigned long tick;
 
 void setup()
 {
-    motion = Motion(Adafruit_MotorShield(), LEFT_MOTOR_PORT, RIGHT_MOTOR_PORT);
-    navigation = Navigation(motion, LineSensor(LEFT_LINE_SENSOR_PIN), LineSensor(RIGHT_LINE_SENSOR_PIN));
     Serial.begin(DEFAULT_BAUD_RATE);
     Serial.println("Starting!");
-
-    tick = 0;
+    
+    motion = Motion(new Adafruit_MotorShield(), LEFT_MOTOR_PORT, RIGHT_MOTOR_PORT);
+    motion.Begin();
+    navigation = Navigation(&motion, new LineSensor(LEFT_LINE_SENSOR_PIN), new LineSensor(RIGHT_LINE_SENSOR_PIN));
 }
 
 void loop()
 {
-    //Serial.println(tick);
-    tick++;
     navigation.Tick();
     motion.Tick();
 }

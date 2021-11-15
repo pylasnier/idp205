@@ -30,10 +30,10 @@ enum navigation_state_t
 class Navigation
 {
     private:
-        Motion motion;
+        Motion *motion;
 
-        LineSensor leftLineSensor;
-        LineSensor rightLineSensor;
+        LineSensor *leftLineSensor;
+        LineSensor *rightLineSensor;
 
         //UltrasoundSensor distanceSensor;
 
@@ -51,7 +51,7 @@ class Navigation
         double initalBearing;
 
     public:
-        Navigation(Motion, LineSensor, LineSensor/*, UltrasoundSensor*/);
+        Navigation(Motion *, LineSensor *, LineSensor */*, UltrasoundSensor*/);
         Navigation();
 
         void Tick();

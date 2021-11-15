@@ -4,34 +4,45 @@
 #include "line_detection.h"
 #include "ultrasound.h"
 
-Navigation::Navigation(Motion _motion, LineSensor _leftLineSensor, LineSensor _rightLineSensor/*, UltrasoundSensor _distanceSensor*/)
+Navigation::Navigation(Motion *_motion, LineSensor *_leftLineSensor, LineSensor *_rightLineSensor/*, UltrasoundSensor _distanceSensor*/)
 {
+    //distanceSensor = _distanceSensor;
+
     motion = _motion;
     leftLineSensor = _leftLineSensor;
     rightLineSensor = _rightLineSensor;
-    //distanceSensor = _distanceSensor;
 
     firstContact = true;
     navigationState = ON_TRACK;
-    lineBearing = motion.GetBearing();
+    lineBearing = motion->GetBearing();
 }
 
-Navigation::Navigation() : Navigation(Motion(), LineSensor(), LineSensor()/*, UltrasoundSensor()*/) { }
+Navigation::Navigation() : Navigation(new Motion(), new LineSensor(), new LineSensor()) { }
 
 void Navigation::Tick()
 {
-    bool leftContact = leftLineSensor.Line();
-    bool rightContact = rightLineSensor.Line();
+    bool leftContact = leftLineSensor->Line();
+    bool rightContact = rightLineSensor->Line();
 
-    Serial.print(navigationState);
-    Serial.print(" ");
-    Serial.print(leftContact);
-    Serial.print(" ");
-    Serial.println(rightContact);
+    // ON_TRACK case
+    double theta;
+    double R;
 
-    if (motion.GetTargetSpeed() != CRUISE_SPEED)
+    // CONTACT case
+    double thetaFromDistance;
+    double weightedTheta;
+    double idealR;
+
+    // Serial.print(state);
+    // Serial.print(" ");
+    // Serial.print(leftContact);
+    // Serial.print(" ");
+    // Serial.println(rightContact);
+
+    if (motion->GetTargetSpeed() != CRUISE_SPEED)
     {
-        motion.SetSpeed(CRUISE_SPEED);
+        Serial.println("FORWARD!!");
+        motion->SetSpeed(CRUISE_SPEED);
     }
 
     if (leftContact && rightContact)
@@ -45,8 +56,8 @@ void Navigation::Tick()
             // While there is a discrepancy between the robot bearing and the
             // line bearing, the robot should turn to adjust.
             // Previous R from last contact should be maintained until straight.
-            double theta = motion.GetBearing() - lineBearing;
-            double R = motion.GetTurnRadius();
+            theta = motion->GetBearing() - lineBearing;
+            R = motion->GetTurnRadius();
             if (abs(theta) < STRAIGHT_THETA_MARGIN)
             {
                 theta = 0;
@@ -57,7 +68,7 @@ void Navigation::Tick()
             {
                 if (R != 0)
                 {
-                    motion.SetTurnRadius(0);
+                    motion->SetTurnRadius(0);
                 }
             }
             else
@@ -65,7 +76,7 @@ void Navigation::Tick()
                 // If not turning or if, for some bizarre reason, turning the wrong way
                 if (R == 0 || R * theta < -1)
                 {
-                    motion.SetTurnRadius((theta > 0 ? 1 : -1) * OFF_LINE_TURN_RADIUS);
+                    motion->SetTurnRadius((theta > 0 ? 1 : -1) * OFF_LINE_TURN_RADIUS);
                 }
             }
 
@@ -73,13 +84,13 @@ void Navigation::Tick()
             if (leftContact || rightContact)
             {
                 contactDirectionMultiplier = (leftContact ? 1 : -1);
-                initialTheta = contactDirectionMultiplier * (SENSOR_SEPARATION - LINE_THICKNESS) / (2.0f * motion.GetDeltaY());
-                initalBearing = motion.GetBearing();
+                initialTheta = contactDirectionMultiplier * (SENSOR_SEPARATION - LINE_THICKNESS) / (2.0f * motion->GetDeltaY());
+                initalBearing = motion->GetBearing();
 
                 navigationState = CONTACT;
                 Serial.print("Contact! Turn ");
                 Serial.println((leftContact ? "left" : "right"));
-                motion.SetTurnRadius(contactDirectionMultiplier * ON_LINE_TURN_RADIUS);
+                motion->SetTurnRadius(contactDirectionMultiplier * ON_LINE_TURN_RADIUS);
             }
             break;
         
@@ -91,11 +102,7 @@ void Navigation::Tick()
             // holding constant weight.
             if (!(leftContact || rightContact))
             {
-                double thetaFromDistance;
-                double weightedTheta;
-                double idealR;
-
-                thetaFromDistance = motion.GetDeltaY() / (2.0f * motion.GetTurnRadius());
+                thetaFromDistance = motion->GetDeltaY() / (2.0f * motion->GetTurnRadius());
 
                 if (firstContact)
                 {
@@ -111,7 +118,7 @@ void Navigation::Tick()
                 
                 // Choose R to align centrally with line, but not over typical turn radius off the line
                 idealR = (SENSOR_SEPARATION - LINE_THICKNESS) / (2.0f * weightedTheta * weightedTheta);
-                motion.SetTurnRadius(-contactDirectionMultiplier * (idealR > OFF_LINE_TURN_RADIUS ? OFF_LINE_TURN_RADIUS : idealR));
+                motion->SetTurnRadius(-contactDirectionMultiplier * (idealR > OFF_LINE_TURN_RADIUS ? OFF_LINE_TURN_RADIUS : idealR));
 
                 navigationState = ON_TRACK;
                 Serial.print("Back on track; angle discrepancy: ");
@@ -126,7 +133,6 @@ void Navigation::Tick()
             break;
         
         case LOST:
-            Serial.println("i'm lost");
             break;
 
         default:
