@@ -5,16 +5,15 @@
 
 UltrasoundSensor::UltrasoundSensor(pin_size_t _ultrasound_trig, pin_size_t _ultrasound_echo)
 {
-    ultrasound_trig = _ultrasound_trig;
-    ultrasound_echo = _ultrasound_echo;
-
-    pinMode(ultrasound_trig, OUTPUT);
-    pinMode(ultrasound_echo, INPUT);
+    SetTrigPin(_ultrasound_trig);
+    SetEchoPin(_ultrasound_echo);
 
     enabled = false;
     distance = ULONG_MAX;
     t = micros();
 }
+
+UltrasoundSensor::UltrasoundSensor() : UltrasoundSensor(PIN_NOT_SET, PIN_NOT_SET) { }
 
 void UltrasoundSensor::Tick()
 {
@@ -26,8 +25,14 @@ void UltrasoundSensor::Tick()
 
     bool reset = false;
 
+    // Shouldn't ever happen if I don't suck
+    if (ultrasound_trig == PIN_NOT_SET || ultrasound_echo == PIN_NOT_SET)
+    {
+        Serial.write("ULTRASOUND PINS NOT SET");
+    }
+
     // Delay considered here; just don't run if it's too soon
-    if (enabled && micros() - t > DELAY_WAIT_LENGTH)
+    else if (enabled && micros() - t > DELAY_WAIT_LENGTH)
     {
         // Send a pulse of 10 us by waiting using delayMicroseconds function
         digitalWrite(ultrasound_trig, HIGH);
@@ -72,4 +77,29 @@ void UltrasoundSensor::Disable()
 unsigned long UltrasoundSensor::GetDistance()
 {
     return distance;
+}
+
+void UltrasoundSensor::SetTrigPin(pin_size_t _ultrasound_trig)
+{
+    if (ultrasound_trig != PIN_NOT_SET)
+    {
+        pinMode(ultrasound_trig, INPUT);
+    }
+
+    ultrasound_trig = _ultrasound_trig;
+
+    if (ultrasound_trig != PIN_NOT_SET)
+    {
+        pinMode(ultrasound_trig, OUTPUT);
+    }
+}
+
+void UltrasoundSensor::SetEchoPin(pin_size_t _ultrasound_echo)
+{
+    ultrasound_echo = _ultrasound_echo;
+    
+    if (ultrasound_echo != PIN_NOT_SET)
+    {
+        pinMode(ultrasound_echo, INPUT);
+    }
 }

@@ -1,3 +1,8 @@
+#ifndef ULTRASOUND_H
+#define ULTRASOUND_H
+
+#include <Wire.h>
+
 #define     ULTRASOUND_TRIG     1      // Digital I/O output pin
 #define     ULTRASOUND_ECHO     2      // Digital I/O input pin
 
@@ -21,6 +26,7 @@ class UltrasoundSensor
     public:
         // You pass the out/in pins for the sensor
         UltrasoundSensor(pin_size_t, pin_size_t);
+        UltrasoundSensor();
         
         // Call this in loop. It times itself and updates distance accordingly
         void Tick();
@@ -28,4 +34,10 @@ class UltrasoundSensor
         void Enable();
         void Disable();
         unsigned long GetDistance();
+
+        // In case you didn't set pins/need to change them
+        void SetTrigPin(pin_size_t);
+        void SetEchoPin(pin_size_t);
 };
+
+#endif
