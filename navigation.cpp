@@ -23,6 +23,12 @@ void Navigation::Tick()
     bool leftContact = leftLineSensor.Line();
     bool rightContact = rightLineSensor.Line();
 
+    Serial.print(navigationState);
+    Serial.print(" ");
+    Serial.print(leftContact);
+    Serial.print(" ");
+    Serial.println(rightContact);
+
     if (motion.GetTargetSpeed() != CRUISE_SPEED)
     {
         motion.SetSpeed(CRUISE_SPEED);
@@ -71,6 +77,8 @@ void Navigation::Tick()
                 initalBearing = motion.GetBearing();
 
                 navigationState = CONTACT;
+                Serial.print("Contact! Turn ");
+                Serial.println((leftContact ? "left" : "right"));
                 motion.SetTurnRadius(contactDirectionMultiplier * ON_LINE_TURN_RADIUS);
             }
             break;
@@ -106,11 +114,23 @@ void Navigation::Tick()
                 motion.SetTurnRadius(-contactDirectionMultiplier * (idealR > OFF_LINE_TURN_RADIUS ? OFF_LINE_TURN_RADIUS : idealR));
 
                 navigationState = ON_TRACK;
+                Serial.print("Back on track; angle discrepancy: ");
+                Serial.print(thetaFromDistance / PI * 180);
+                Serial.println(" degrees");
             }
             break;
         
         case DOUBLE_CONTACT:
             Serial.println("I'M STUCK (DON'T HUG ME I'M SCARED) I.E. DOUBLE CONTACT!!!");
+            navigationState = LOST;
+            break;
+        
+        case LOST:
+            Serial.println("i'm lost");
+            break;
+
+        default:
+            Serial.println("No navigation state");
             break;
     }
 }

@@ -6,4 +6,10 @@
 
 #define     DEFAULT_BAUD_RATE   9600    // For serial read/write
 
+#define     LEFT_MOTOR_PORT         3
+#define     RIGHT_MOTOR_PORT        4
+
+#define     LEFT_LINE_SENSOR_PIN    A0
+#define     RIGHT_LINE_SENSOR_PIN   A1
+
 #endif

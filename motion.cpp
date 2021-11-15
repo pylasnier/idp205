@@ -40,6 +40,14 @@ void Motion::Tick()
 
         leftMotor->run(leftWheelSpeed > 0 ? FORWARD : BACKWARD);
         leftMotor->setSpeedFine((uint16_t) (leftWheelSpeed * VELOCITY_TO_MOTOR_SPEED));
+
+        Serial.print("New wheel speeds: ");
+        Serial.print(leftWheelSpeed);
+        Serial.print(" O-O ");
+        Serial.print(rightWheelSpeed);
+        Serial.println(" ( / 4095 )");
+
+        updated = false;
     }
 
     distance += speed * dt;

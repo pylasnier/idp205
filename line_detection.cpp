@@ -17,15 +17,12 @@ unsigned long LineSensor::Sensor_reading()
 
 bool LineSensor::Line()
 {
+    //Serial.println(analogRead(line_sensor_pin));
     return analogRead(line_sensor_pin) > LINE_SENSOR_THRESHOLD;
 }
 
 void LineSensor::SetSensorPin(pin_size_t _line_sensor_pin)
 {
+    // Analogue,  don't need to set as input
     line_sensor_pin = _line_sensor_pin;
-    
-    if (line_sensor_pin != PIN_NOT_SET)
-    {
-        pinMode(line_sensor_pin, INPUT);
-    }
 }
