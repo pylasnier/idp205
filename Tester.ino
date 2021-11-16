@@ -17,13 +17,15 @@
 #include "robot.h"
 #include "ultrasound.h"
 #include "line_detection.h"
+#include "IR_reciever.h"
 
 enum configuration_t
 {
   TEST_STARTER = 0,
   ULTRASOUND = 1,
   MOVING = 2,
-  LINE_SENSOR = 3
+  LINE_SENSOR = 3,
+  IR_RECIEVER = 4
 };
 
 int sensorPin = A0;    // select the input pin for the potentiometer
@@ -37,12 +39,14 @@ Adafruit_MotorShield AFSM = Adafruit_MotorShield();
 Adafruit_DCMotor *leftMotor = AFSM.getMotor(3);
 Adafruit_DCMotor *rightMotor = AFSM.getMotor(4);
 
-configuration_t Configuration = LINE_SENSOR;     // SET THIS TO MODE YOU WANT TO TEST
+configuration_t Configuration = IR_RECIEVER;     // SET THIS TO MODE YOU WANT TO TEST
 
 UltrasoundSensor mySensor = UltrasoundSensor(ULTRASOUND_TRIG, ULTRASOUND_ECHO);
 
 LineSensor line1 = LineSensor(A0);
 LineSensor line2 = LineSensor(A1);
+
+IRReciever reciever1 = IRReciever(A0);
 
 void setup() {
   switch (Configuration)
@@ -94,6 +98,11 @@ void setup() {
     digitalWrite(12, LOW);
     ledOn = false;
     break;
+  
+  case IR_RECIEVER:
+    Serial.begin(DEFAULT_BAUD_RATE);
+    break;
+
   default: break;
   }
 }
@@ -165,6 +174,10 @@ void loop() {
         ledOn = false;
       }
       
+      break;
+    
+    case IR_RECIEVER:
+      Serial.println(reciever1.Reciever_Reading());
       break;
     
     default: break;
