@@ -25,12 +25,17 @@ enum configuration_t
   ULTRASOUND = 1,
   MOVING = 2,
   LINE_SENSOR = 3,
-  IR_RECIEVER = 4
+  IR_RECIEVER = 4,
+  SAY_SOMETHING = 5
 };
 
 int sensorPin = A0;    // select the input pin for the potentiometer
 int ledPin = 13;      // select the pin for the LED
 int sensorValue = 0;  // variable to store the value coming from the sensor
+const int num_recorded = 200;     // number of readings to be recorded from the reciever
+int IR_log [num_recorded];        // log of previous readings
+int count = 0;                        // location in log
+int sum;
 
 unsigned long t; //To measure time
 bool ledOn;
@@ -101,6 +106,16 @@ void setup() {
   
   case IR_RECIEVER:
     Serial.begin(DEFAULT_BAUD_RATE);
+    while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+    }
+    break;
+
+  case SAY_SOMETHING:
+    Serial.begin(DEFAULT_BAUD_RATE);
+    while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+    }
     break;
 
   default: break;
@@ -177,7 +192,27 @@ void loop() {
       break;
     
     case IR_RECIEVER:
-      Serial.println(reciever1.Reciever_Reading());
+      //Serial.println("In here");
+      //Serial.println(reciever1.Reciever_Reading());
+      IR_log[count] = reciever1.Reciever_Reading();
+      count += 1;
+      if (count == num_recorded)
+      {
+        count = 0;
+      }
+      if (count % (num_recorded - 1) == 0)
+      {
+        sum = 0;
+        for (int i = 0; i < num_recorded; i++)
+        {
+          sum += IR_log[i];
+        }
+        Serial.println(sum);
+      }
+      break;
+    
+    case SAY_SOMETHING:
+      Serial.println("Hello");
       break;
     
     default: break;
