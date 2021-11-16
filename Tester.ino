@@ -34,14 +34,15 @@ unsigned long t; //To measure time
 bool ledOn;
 
 Adafruit_MotorShield AFSM = Adafruit_MotorShield();
-Adafruit_DCMotor *leftMotor = AFSM.getMotor(4);
-Adafruit_DCMotor *rightMotor = AFSM.getMotor(3);
+Adafruit_DCMotor *leftMotor = AFSM.getMotor(3);
+Adafruit_DCMotor *rightMotor = AFSM.getMotor(4);
 
 configuration_t Configuration = LINE_SENSOR;     // SET THIS TO MODE YOU WANT TO TEST
 
 UltrasoundSensor mySensor = UltrasoundSensor(ULTRASOUND_TRIG, ULTRASOUND_ECHO);
 
 LineSensor line1 = LineSensor(A0);
+LineSensor line2 = LineSensor(A1);
 
 void setup() {
   switch (Configuration)
@@ -81,6 +82,12 @@ void setup() {
   
   case LINE_SENSOR:
     Serial.begin(DEFAULT_BAUD_RATE);
+    Serial.println("Line sensor test");
+
+    // Just for Ben x
+    AFSM.begin();
+    leftMotor->setSpeed(255);
+    leftMotor->run(FORWARD);
 
     // declare the ledPin as an OUTPUT:
     pinMode(12, OUTPUT);
@@ -141,7 +148,9 @@ void loop() {
       break;
 
     case LINE_SENSOR:
-      Serial.println(line1.Line());
+      Serial.print(line1.Sensor_reading());
+      Serial.print(" - ");
+      Serial.println(line2.Sensor_reading());
 
       if (line1.Line())
       {
