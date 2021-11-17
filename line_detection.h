@@ -1,7 +1,7 @@
 #ifndef LINE_SENSOR_H
 #define LINE_SENSOR_H
 
-#define     LINE_SENSOR_THRESHOLD       100
+#define     LINE_SENSOR_THRESHOLD       250
 
 //https://www.ttelectronics.com/TTElectronics/media/ProductFiles/Datasheets/OPB703-70_70A-70F-B-704.pdf
 class LineSensor

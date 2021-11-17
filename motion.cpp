@@ -57,16 +57,18 @@ void Motion::Tick()
         double leftWheelSpeed = speed * (1 - velocityDifference);
 
         rightMotor->setSpeedFine((uint16_t) (rightWheelSpeed * VELOCITY_TO_MOTOR_SPEED));
-        rightMotor->run(rightWheelSpeed > 0 ? FORWARD : BACKWARD);
+        rightMotor->run(rightWheelSpeed < 0 ? FORWARD : BACKWARD);
+
+        // SWAP INEQUALITY SIGN BACK WHEN MOTORS ARE MOUNTED IN RIGHT DIRECTION
 
         leftMotor->setSpeedFine((uint16_t) (leftWheelSpeed * VELOCITY_TO_MOTOR_SPEED));
-        leftMotor->run(leftWheelSpeed > 0 ? FORWARD : BACKWARD);
+        leftMotor->run(leftWheelSpeed < 0 ? FORWARD : BACKWARD);
 
-        Serial.print("New wheel speeds: ");
-        Serial.print(leftWheelSpeed);
-        Serial.print(" O-O ");
-        Serial.print(rightWheelSpeed);
-        Serial.println(" ( / 4095 )");
+        // Serial.print("New wheel speeds: ");
+        // Serial.print(leftWheelSpeed);
+        // Serial.print(" O-O ");
+        // Serial.print(rightWheelSpeed);
+        // Serial.println(" ( / ~70 )");
 
         updated = false;
     }

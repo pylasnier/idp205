@@ -87,7 +87,7 @@ void setup() {
     // Just for Ben x
     AFSM.begin();
     leftMotor->setSpeed(255);
-    leftMotor->run(FORWARD);
+    //leftMotor->run(FORWARD);
 
     // declare the ledPin as an OUTPUT:
     pinMode(12, OUTPUT);

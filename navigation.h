@@ -1,13 +1,13 @@
 #ifndef NAVIGATION_H
 #define NAVIGATION_H
 
-#define     SENSOR_SEPARATION       100     // 'd' in analysis. Given in mm
-#define     LINE_THICKNESS          80      // 't' in analysis. Given in mm
+#define     SENSOR_SEPARATION       20      // 'd' in analysis. Given in mm
+#define     LINE_THICKNESS          17      // 't' in analysis. Given in mm
 
-#define     ON_LINE_TURN_RADIUS     300     // 'R' in analysis, must be less than dt/(d-t). Given in mm
-#define     OFF_LINE_TURN_RADIUS    2000    // 'R' in analysis, but for off line; 2000 is reasonable limit. Given in mm
+#define     ON_LINE_TURN_RADIUS     100     // 'R' in analysis, should be less than dt/(d-t). Can use smaller theoretical d. Given in mm
+#define     OFF_LINE_TURN_RADIUS    200     // 'R' in analysis, but for off line; 2000 is reasonable limit. Given in mm
 
-#define     CRUISE_SPEED            200     // 'v' in analysis. Given in mm/s
+#define     CRUISE_SPEED            55      // 'v' in analysis. Given in mm/s
 
 #define     INITIAL_THETA_WEIGHT    0
 #define     DISTANCE_THETA_WEIGHT   1

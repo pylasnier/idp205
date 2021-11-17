@@ -58,7 +58,7 @@ void Navigation::Tick()
             // Previous R from last contact should be maintained until straight.
             theta = motion->GetBearing() - lineBearing;
             R = motion->GetTurnRadius();
-            if (abs(theta) < STRAIGHT_THETA_MARGIN)
+            if (fabs(theta) < STRAIGHT_THETA_MARGIN)
             {
                 theta = 0;
             }
@@ -68,6 +68,8 @@ void Navigation::Tick()
             {
                 if (R != 0)
                 {
+                    Serial.print("Straightened out. New bearing: ");
+                    Serial.println(motion->GetBearing() / PI * 180);
                     motion->SetTurnRadius(0);
                 }
             }
@@ -107,8 +109,8 @@ void Navigation::Tick()
                 if (firstContact)
                 {
                     firstContact = false;
-                    lineBearing = initalBearing + thetaFromDistance;
                     weightedTheta = thetaFromDistance;
+                    lineBearing = initalBearing + weightedTheta;
                 }
                 else
                 {
@@ -117,13 +119,17 @@ void Navigation::Tick()
                 }
                 
                 // Choose R to align centrally with line, but not over typical turn radius off the line
-                idealR = (SENSOR_SEPARATION - LINE_THICKNESS) / (2.0f * weightedTheta * weightedTheta);
+                idealR = (SENSOR_SEPARATION - LINE_THICKNESS) / (weightedTheta * weightedTheta);
                 motion->SetTurnRadius(-contactDirectionMultiplier * (idealR > OFF_LINE_TURN_RADIUS ? OFF_LINE_TURN_RADIUS : idealR));
 
                 navigationState = ON_TRACK;
                 Serial.print("Back on track; angle discrepancy: ");
-                Serial.print(thetaFromDistance / PI * 180);
+                Serial.print(fabs(thetaFromDistance) / PI * 180);
                 Serial.println(" degrees");
+                Serial.print("Line bearing: ");
+                Serial.print(lineBearing / PI * 180);
+                Serial.print("; Wheel-e bearing: ");
+                Serial.println(motion->GetBearing() / PI * 180);
             }
             break;
         

@@ -1,8 +1,8 @@
 #ifndef MOTION_H
 #define MOTION_H
 
-#define     WHEEL_SEPARATION            200     // in mm
-#define     VELOCITY_TO_MOTOR_SPEED     16      // Temporary, while we don't have wheel encoders. Calibrate appropriately. In mm/s
+#define     WHEEL_SEPARATION            185     // in mm
+#define     VELOCITY_TO_MOTOR_SPEED     60      // Temporary, while we don't have wheel encoders. Calibrate appropriately. In mm/s
 
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
