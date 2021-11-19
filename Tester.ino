@@ -36,6 +36,12 @@ const int num_recorded = 200;     // number of readings to be recorded from the 
 int IR_log [num_recorded];        // log of previous readings
 int count = 0;                        // location in log
 int sum;
+int low_baby_threshold  = 5000;
+int high_baby_threshold = 9000;
+int low_mama_threshold = 10000;
+int high_mama_threshold = 16000;
+int low_papa_threshold = 18000;
+int high_papa_threshold = 28000;
 
 unsigned long t; //To measure time
 bool ledOn;
@@ -207,7 +213,28 @@ void loop() {
         {
           sum += IR_log[i];
         }
+
         Serial.println(sum);
+
+        if (sum > low_papa_threshold and sum < high_papa_threshold)
+        {
+          Serial.println("Papa");
+        }
+
+        else if (sum > low_mama_threshold and sum < high_mama_threshold)
+        {
+          Serial.println("Mama");
+        }
+
+        else if (sum > low_baby_threshold and sum < high_baby_threshold)
+        {
+          Serial.println("Baby");
+        }
+
+        else
+        {
+          Serial.println("Unknown signal");
+        }
       }
       break;
     
