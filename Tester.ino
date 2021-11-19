@@ -12,6 +12,7 @@
 
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
+#include <SharpIR.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
 
 #include "robot.h"
@@ -26,7 +27,8 @@ enum configuration_t
   MOVING = 2,
   LINE_SENSOR = 3,
   IR_RECIEVER = 4,
-  SAY_SOMETHING = 5
+  SAY_SOMETHING = 5,
+  ALIGNMENT = 6
 };
 
 int sensorPin = A0;    // select the input pin for the potentiometer
@@ -50,7 +52,7 @@ Adafruit_MotorShield AFSM = Adafruit_MotorShield();
 Adafruit_DCMotor *leftMotor = AFSM.getMotor(3);
 Adafruit_DCMotor *rightMotor = AFSM.getMotor(4);
 
-configuration_t Configuration = IR_RECIEVER;     // SET THIS TO MODE YOU WANT TO TEST
+configuration_t Configuration = ALIGNMENT;     // SET THIS TO MODE YOU WANT TO TEST
 
 UltrasoundSensor mySensor = UltrasoundSensor(ULTRASOUND_TRIG, ULTRASOUND_ECHO);
 
@@ -58,6 +60,8 @@ LineSensor line1 = LineSensor(A0);
 LineSensor line2 = LineSensor(A1);
 
 IRReciever reciever1 = IRReciever(A0);
+
+SharpIR alignment1(1, A2);
 
 void setup() {
   switch (Configuration)
@@ -123,7 +127,12 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB port only
     }
     break;
-
+  
+  case ALIGNMENT:
+    Serial.begin(DEFAULT_BAUD_RATE);
+    while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+    }
   default: break;
   }
 }
@@ -242,6 +251,10 @@ void loop() {
       Serial.println("Hello");
       break;
     
+    case ALIGNMENT:
+      Serial.println(alignment1.getDistance());
+      break;
+
     default: break;
   }
 }
