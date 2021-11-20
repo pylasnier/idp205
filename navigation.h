@@ -14,6 +14,8 @@
 
 #define     STRAIGHT_THETA_MARGIN   0.02f   // Margin of theta for which robot is considered straight
 
+#define     NAVIGATION_LINE_THRESHOLD   250
+
 #include <Wire.h>
 #include "motion.h"
 #include "line_detection.h"

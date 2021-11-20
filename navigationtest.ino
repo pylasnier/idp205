@@ -17,9 +17,9 @@ void setup()
     Serial.begin(DEFAULT_BAUD_RATE);
     Serial.println("Starting!");
     
-    motion = Motion(new Adafruit_MotorShield(), LEFT_MOTOR_PORT, RIGHT_MOTOR_PORT);
+    motion = Motion(new Adafruit_MotorShield(), LEFT_MOTOR_PORT, RIGHT_MOTOR_PORT, new WheelEncoder(), new WheelEncoder());
     motion.Begin();
-    navigation = Navigation(&motion, new LineSensor(LEFT_LINE_SENSOR_PIN), new LineSensor(RIGHT_LINE_SENSOR_PIN));
+    navigation = Navigation(&motion, new LineSensor(LEFT_LINE_SENSOR_PIN, NAVIGATION_LINE_THRESHOLD), new LineSensor(RIGHT_LINE_SENSOR_PIN, NAVIGATION_LINE_THRESHOLD));
 }
 
 void loop()

@@ -44,12 +44,12 @@ Adafruit_MotorShield AFSM = Adafruit_MotorShield();
 Adafruit_DCMotor *leftMotor = AFSM.getMotor(3);
 Adafruit_DCMotor *rightMotor = AFSM.getMotor(4);
 
-configuration_t Configuration = IR_RECIEVER;     // SET THIS TO MODE YOU WANT TO TEST
+configuration_t Configuration = LINE_SENSOR;     // SET THIS TO MODE YOU WANT TO TEST
 
 UltrasoundSensor mySensor = UltrasoundSensor(ULTRASOUND_TRIG, ULTRASOUND_ECHO);
 
-LineSensor line1 = LineSensor(A0);
-LineSensor line2 = LineSensor(A1);
+LineSensor line1 = LineSensor(A2, 100);
+LineSensor line2 = LineSensor(A1, 100);
 
 IRReciever reciever1 = IRReciever(A0);
 

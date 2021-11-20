@@ -6,6 +6,7 @@
 
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
+#include "wheelencoder.h"
 
 class Motion
 {
@@ -13,6 +14,9 @@ class Motion
         Adafruit_MotorShield *AFSM;
         Adafruit_DCMotor *leftMotor;
         Adafruit_DCMotor *rightMotor;
+
+        WheelEncoder *leftWheelEncoder;
+        WheelEncoder *rightWheelEncoder;
 
         double speed;
         double distance;
@@ -25,7 +29,7 @@ class Motion
         bool updated;
 
     public:
-        Motion(Adafruit_MotorShield *, uint8_t, uint8_t);
+        Motion(Adafruit_MotorShield *, uint8_t, uint8_t, WheelEncoder *, WheelEncoder *);
         Motion(uint8_t, uint8_t);
         Motion();
 

@@ -2,14 +2,18 @@
 #include "robot.h"
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
+#include "wheelencoder.h"
 
-Motion::Motion(Adafruit_MotorShield *_AFSM, uint8_t leftMotorPort, uint8_t rightMotorPort)
+Motion::Motion(Adafruit_MotorShield *_AFSM, uint8_t leftMotorPort, uint8_t rightMotorPort, WheelEncoder *_leftWheelEncoder, WheelEncoder *_rightWheelEncoder)
 {
     AFSM = _AFSM;
     leftMotor = AFSM->getMotor(leftMotorPort);
     rightMotor = AFSM->getMotor(rightMotorPort);
     // WTFfffffffffffF WTAFwtwfwtwftwtf
     //Serial.println("there's no way right");
+
+    leftWheelEncoder = _leftWheelEncoder;
+    rightWheelEncoder = _rightWheelEncoder;
 
     t = millis();
 }
@@ -27,15 +31,19 @@ void Motion::Begin()
     updated = false;
 }
 
-Motion::Motion(uint8_t leftMotorPort, uint8_t rightMotorPort) : Motion(new Adafruit_MotorShield(), leftMotorPort, rightMotorPort) { }
+Motion::Motion(uint8_t leftMotorPort, uint8_t rightMotorPort) : Motion(new Adafruit_MotorShield(), leftMotorPort, rightMotorPort, new WheelEncoder(), new WheelEncoder()) { }
 
 Motion::Motion() : Motion(PIN_NOT_SET, PIN_NOT_SET) { }
 
 void Motion::Tick()
 {
-    double dt = millis() - t;
+    double dt = (millis() - t) / 1000;
     t = millis();
+
+    // Calibrating motor speed ratios and correcting distance and bearing based on wheel encoder information
+
     
+    // Updating wheel motors based on current values
     if (updated)
     {
         double velocityDifference;
@@ -73,11 +81,11 @@ void Motion::Tick()
         updated = false;
     }
 
-    distance += speed * dt / 1000;
+    distance += speed * dt;
     if (turnRadius != 0)
     {
         // Minus because +ve R indicates turning left
-        bearing -= speed / turnRadius * dt / 1000;
+        bearing -= speed / turnRadius * dt;
     }
 }
 
