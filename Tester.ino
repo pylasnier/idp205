@@ -12,6 +12,7 @@
 
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
+#include <SharpIR.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
 
 #include "robot.h"
@@ -26,7 +27,8 @@ enum configuration_t
   MOVING = 2,
   LINE_SENSOR = 3,
   IR_RECIEVER = 4,
-  SAY_SOMETHING = 5
+  SAY_SOMETHING = 5,
+  ALIGNMENT = 6
 };
 
 int sensorPin = A0;    // select the input pin for the potentiometer
@@ -36,6 +38,12 @@ const int num_recorded = 200;     // number of readings to be recorded from the 
 int IR_log [num_recorded];        // log of previous readings
 int count = 0;                        // location in log
 int sum;
+int low_baby_threshold  = 5000;
+int high_baby_threshold = 9000;
+int low_mama_threshold = 10000;
+int high_mama_threshold = 16000;
+int low_papa_threshold = 18000;
+int high_papa_threshold = 28000;
 
 unsigned long t; //To measure time
 bool ledOn;
@@ -44,7 +52,7 @@ Adafruit_MotorShield AFSM = Adafruit_MotorShield();
 Adafruit_DCMotor *leftMotor = AFSM.getMotor(3);
 Adafruit_DCMotor *rightMotor = AFSM.getMotor(4);
 
-configuration_t Configuration = LINE_SENSOR;     // SET THIS TO MODE YOU WANT TO TEST
+configuration_t Configuration = ALIGNMENT;     // SET THIS TO MODE YOU WANT TO TEST
 
 UltrasoundSensor mySensor = UltrasoundSensor(ULTRASOUND_TRIG, ULTRASOUND_ECHO);
 
@@ -52,6 +60,8 @@ LineSensor line1 = LineSensor(A2, 100);
 LineSensor line2 = LineSensor(A1, 100);
 
 IRReciever reciever1 = IRReciever(A0);
+
+SharpIR alignment1(1, A2);
 
 void setup() {
   switch (Configuration)
@@ -117,7 +127,12 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB port only
     }
     break;
-
+  
+  case ALIGNMENT:
+    Serial.begin(DEFAULT_BAUD_RATE);
+    while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+    }
   default: break;
   }
 }
@@ -207,7 +222,28 @@ void loop() {
         {
           sum += IR_log[i];
         }
+
         Serial.println(sum);
+
+        if (sum > low_papa_threshold and sum < high_papa_threshold)
+        {
+          Serial.println("Papa");
+        }
+
+        else if (sum > low_mama_threshold and sum < high_mama_threshold)
+        {
+          Serial.println("Mama");
+        }
+
+        else if (sum > low_baby_threshold and sum < high_baby_threshold)
+        {
+          Serial.println("Baby");
+        }
+
+        else
+        {
+          Serial.println("Unknown signal");
+        }
       }
       break;
     
@@ -215,6 +251,10 @@ void loop() {
       Serial.println("Hello");
       break;
     
+    case ALIGNMENT:
+      Serial.println(alignment1.getDistance());
+      break;
+
     default: break;
   }
 }
