@@ -21,37 +21,68 @@
 #include "line_detection.h"
 #include "ultrasound.h"
 
-enum navigation_state_t
-{
-    ON_TRACK = 0,
-    CONTACT = 1,
-    DOUBLE_CONTACT = 2,
-    LOST = 3
-};
 
 class Navigation
 {
     private:
+        enum navigation_state_t
+        {
+            CALIBRATING = 0,
+            TRACK_FOLLOWING = 1
+        };
+
+        class TrackFollower
+        {
+            private:
+                enum track_follower_state_t
+                {
+                    ON_TRACK = 0,
+                    CONTACT = 1,
+                    DOUBLE_CONTACT = 2,
+                    LOST = 3
+                };
+
+                bool enabled;
+            
+                Motion *motion;
+
+                LineSensor *leftLineSensor;
+                LineSensor *rightLineSensor;
+
+                //UltrasoundSensor distanceSensor;
+
+                track_follower_state_t navigationState;
+                bool firstContact;                  // True on start, false after first contact made. Helps weight
+                int contactDirectionMultiplier;     // 1 or -1 depending on which sensor made contact, giving direction to turn
+
+                // Desired bearing, which is unknown but is 'guessed' and updated each tick.
+                // motion.GetBearing() - this = theta, which is what is considered in calculations.
+                double lineBearing;
+
+                // Initial guess at theta when running onto the line.
+                double initialTheta;
+                // Bearing at line contact
+                double initalBearing;
+
+            public:
+                TrackFollower(Motion *, LineSensor *, LineSensor *);
+                TrackFollower();
+
+                void Tick();
+
+                void Enable();
+                void Disable();
+        };
+
         Motion *motion;
 
         LineSensor *leftLineSensor;
         LineSensor *rightLineSensor;
 
-        //UltrasoundSensor distanceSensor;
+        TrackFollower trackFollower;
 
         navigation_state_t navigationState;
-        bool firstContact;                  // True on start, false after first contact made. Helps weight
-        int contactDirectionMultiplier;     // 1 or -1 depending on which sensor made contact, giving direction to turn
-
-        // Desired bearing, which is unknown but is 'guessed' and updated each tick.
-        // motion.GetBearing() - this = theta, which is what is considered in calculations.
-        double lineBearing;
-
-        // Initial guess at theta when running onto the line.
-        double initialTheta;
-        // Bearing at line contact
-        double initalBearing;
-
+    
     public:
         Navigation(Motion *, LineSensor *, LineSensor */*, UltrasoundSensor*/);
         Navigation();

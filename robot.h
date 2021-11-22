@@ -11,5 +11,7 @@
 
 #define     LEFT_LINE_SENSOR_PIN    A0
 #define     RIGHT_LINE_SENSOR_PIN   A1
+#define     LEFT_WHEEL_ENCODER_PIN  A2
+#define     RIGHT_WHEEL_ENCODER_PIN A3
 
 #endif

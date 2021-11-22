@@ -9,26 +9,22 @@ Motion::Motion(Adafruit_MotorShield *_AFSM, uint8_t leftMotorPort, uint8_t right
     AFSM = _AFSM;
     leftMotor = AFSM->getMotor(leftMotorPort);
     rightMotor = AFSM->getMotor(rightMotorPort);
-    // WTFfffffffffffF WTAFwtwfwtwftwtf
-    //Serial.println("there's no way right");
 
     leftWheelEncoder = _leftWheelEncoder;
     rightWheelEncoder = _rightWheelEncoder;
 
     t = millis();
+    update = millis();
 }
 
 void Motion::Begin()
 {
     AFSM->begin();
     
-    speed = 0;
-    distance = 0;
-    lastDistance = 0;
-    turnRadius = 0;
+    targetSpeed = 0;
+    targetTurnRadius = 0;
+    averageTurnRadius = 0;
     bearing = 0;
-
-    updated = false;
 }
 
 Motion::Motion(uint8_t leftMotorPort, uint8_t rightMotorPort) : Motion(new Adafruit_MotorShield(), leftMotorPort, rightMotorPort, new WheelEncoder(), new WheelEncoder()) { }
@@ -37,80 +33,122 @@ Motion::Motion() : Motion(PIN_NOT_SET, PIN_NOT_SET) { }
 
 void Motion::Tick()
 {
-    double dt = (millis() - t) / 1000;
+    double velocityDifference;
+    double turnRate;
+
+    double rightWheelSpeed;
+    double leftWheelSpeed;
+
+    uint16_t rightMotorValue;
+    uint16_t leftMotorValue;
+    uint16_t highestMotorValue;
+
+    leftWheelEncoder->Tick();
+    rightWheelEncoder->Tick();
+
+    double dt = millis() - t;
     t = millis();
 
     // Calibrating motor speed ratios and correcting distance and bearing based on wheel encoder information
 
     
-    // Updating wheel motors based on current values
-    if (updated)
+    // Updating wheel motors based on wheel encoder information
+    if (millis() - update > MOTOR_UPDATE_PERIOD)
     {
-        double velocityDifference;
+        update = millis();
 
         // Difference in wheel speeds calculated using wheel separation compared to turn radius
         // Wheel speed still positive for negative R because you divide it by itself.
         // Basically signs handle themselves here
     
-        if (turnRadius != 0)
+        if (targetTurnRadius != 0)
         {
-            velocityDifference = WHEEL_SEPARATION / 2 / turnRadius;
+            velocityDifference = WHEEL_SEPARATION / (2.0f * targetTurnRadius);
         }
         else
         {
             velocityDifference = 0;
         }
 
-        double rightWheelSpeed = speed * (1 + velocityDifference);
-        double leftWheelSpeed = speed * (1 - velocityDifference);
+        rightWheelSpeed = targetSpeed * (1 + velocityDifference);
+        leftWheelSpeed = targetSpeed * (1 - velocityDifference);
 
-        rightMotor->setSpeedFine((uint16_t) (rightWheelSpeed * VELOCITY_TO_MOTOR_SPEED));
-        rightMotor->run(rightWheelSpeed < 0 ? FORWARD : BACKWARD);
+        rightMotorValue = rightWheelEncoder->GetMotorValue(rightWheelSpeed);
+        leftMotorValue = leftWheelEncoder->GetMotorValue(leftWheelSpeed);
+        highestMotorValue = (leftMotorValue > rightMotorValue ? leftMotorValue : rightMotorValue);
 
-        // SWAP INEQUALITY SIGN BACK WHEN MOTORS ARE MOUNTED IN RIGHT DIRECTION
+        // If the motor value is too high, scale down speeds to make it suitable.
+        // This inevitably caps the true speed some amount below the target speed,
+        // but turn radius should be conserved.
+        if (highestMotorValue > MAX_MOTOR_VALUE)
+        {
+            rightWheelSpeed *= (double) (MAX_MOTOR_VALUE) / (double) highestMotorValue;
+            leftWheelSpeed *= (double) (MAX_MOTOR_VALUE) / (double) highestMotorValue;
 
-        leftMotor->setSpeedFine((uint16_t) (leftWheelSpeed * VELOCITY_TO_MOTOR_SPEED));
-        leftMotor->run(leftWheelSpeed < 0 ? FORWARD : BACKWARD);
+            rightMotorValue = rightWheelEncoder->GetMotorValue(rightWheelSpeed);
+            leftMotorValue = leftWheelEncoder->GetMotorValue(leftWheelSpeed);
+        }
+
+        rightMotor->setSpeedFine(rightWheelEncoder->GetMotorValue());
+        rightMotor->run(rightWheelEncoder->GetMotorDirection());
+
+        leftMotor->setSpeedFine(leftWheelEncoder->GetMotorValue());
+        leftMotor->run(leftWheelEncoder->GetMotorDirection());
 
         // Serial.print("New wheel speeds: ");
         // Serial.print(leftWheelSpeed);
         // Serial.print(" O-O ");
         // Serial.print(rightWheelSpeed);
         // Serial.println(" ( / ~70 )");
-
-        updated = false;
     }
 
-    distance += speed * dt;
-    if (turnRadius != 0)
+    // Update bearing if trying to turn
+    if (targetTurnRadius != 0)
     {
         // Minus because +ve R indicates turning left
-        bearing -= speed / turnRadius * dt;
+        // bearing -= targetSpeed / turnRadius * dt;
+
+        // The true turn rate is determined from wheel encoder values,
+        // giving an approximation to the real turn radius for calculations
+        // in the navigation class. When calibrated properly, should closely
+        // match the desired turn radius.
+        turnRate = (leftWheelEncoder->GetSpeed() - rightWheelEncoder->GetSpeed()) / (double) WHEEL_SEPARATION;
+        bearing += turnRate * dt;
+
+        // 0.002f is weighting of turn rate in average with respect to time
+        averageTurnRadius = (averageTurnRadius - (GetTrueSpeed() / turnRate) * 0.002f * dt) / (1.0f + 0.002f * dt);
     }
 }
 
-double Motion::GetDistance() { return distance; }
+// Much coarser distance measure for total distance.
+double Motion::GetDistance()
+{
+    return (double) ((leftWheelEncoder->GetDivisionsPassed() + rightWheelEncoder->GetDivisionsPassed()) * CIRCUMFERENCE) / (2.0f * DIVISIONS);
+}
 
 double Motion::GetDeltaY()
 {
-    double deltaY = distance - lastDistance;
-    lastDistance = distance;
-    return deltaY;
+    return (leftWheelEncoder->GetDeltaY() + rightWheelEncoder->GetDeltaY()) / 2.0f;
 }
 
-double Motion::GetTargetSpeed() { return speed; }
-double Motion::GetTrueSpeed() { return speed; }
-void Motion::SetSpeed(double _speed)
+double Motion::GetTargetSpeed() { return targetSpeed; }
+double Motion::GetTrueSpeed()
 {
-    speed = _speed;
-    updated = true;
+    return (leftWheelEncoder->GetSpeed() + rightWheelEncoder->GetSpeed()) / 2.0f;
+}
+
+void Motion::SetSpeed(double speed)
+{
+    targetSpeed = speed;
 }
 
 double Motion::GetBearing() { return bearing; }
 
-double Motion::GetTurnRadius() { return turnRadius; }
-void Motion::SetTurnRadius(double _turnRadius)
+double Motion::GetTargetTurnRadius() { return targetTurnRadius; }
+double Motion::GetTrueTurnRadius() { return averageTurnRadius; }
+
+void Motion::SetTurnRadius(double turnRadius)
 {
-    turnRadius = _turnRadius;
-    updated = true;
+    targetTurnRadius = turnRadius;
+    averageTurnRadius = targetTurnRadius;
 }

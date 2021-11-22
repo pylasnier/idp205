@@ -11,19 +11,19 @@ WheelEncoder::WheelEncoder(LineSensor *_lineSensor)
 
     passed = 0;
     lastPassed = 0;
-    deltaYSinceLastChange = 0;
+    interpolatedDistanceSinceLastDeltaY = 0;
 
     speed = 0;
     speedFromStartMean = 0;
+    pointsForFirstMean = 0;
 
     // You can't read from pins during setup. Annoying
     //onWhite = lineSensor->Line();
     onWhite = false;
     firstRead = true;
-    t = millis();
-    timeOfLastChange = millis();
+    t = millis();                   // Measure if Line holds for threshold time
+    timeOfLastChange = millis();    // Time since last division change
 
-    pointsForFirstMean = 0;
     motorValue = 0;
     speedMotorValueConversion = INITIAL_CONVERSION_VALUE;
 }
@@ -39,21 +39,10 @@ double WheelEncoder::GetDeltaY()
 {
     double distance;
 
-    // -1 because whole segments passed is -1 the number of segment boundaries passed
-    distance = (passed - lastPassed - 1) * distancePerDivision;
+    distance = (passed / DIVISIONS - lastPassed / DIVISIONS) * CIRCUMFERENCE + interpolatedDistanceSinceLastDeltaY;
+    interpolatedDistanceSinceLastDeltaY = 0;
+
     lastPassed = passed;
-
-    // These values are very small but will give smooth interpolated distance values
-    // between passes of divisions.
-    distance += distancePerDivision - deltaYSinceLastChange;
-    deltaYSinceLastChange = (millis() - timeOfLastChange) * speed;
-    distance += deltaYSinceLastChange;
-
-    // Proving this works when taking deltaY between divisions:
-    // If no more divisions passed, distance = -distancePerDivison
-    // Adding second line, distance = -deltaYSinceLastChange
-    // Then adding NEW deltaYSinceLastChange so gives
-    // difference between small deltaY change :)
 
     return distance;
 }
@@ -75,7 +64,11 @@ int WheelEncoder::GetMotorDirection() { return (motorValue >= 0 ? FORWARD : BACK
 //  Resets if wheel appears to have stopped
 void WheelEncoder::Tick()
 {
+    int directionStep;
+
     double deltaT;
+    double divisionPassSpeed;
+
     if (firstRead)
     {
         onWhite = lineSensor->Line();
@@ -90,11 +83,13 @@ void WheelEncoder::Tick()
         if (millis() - t > ENCODER_TIME_THRESHOLD)
         {
             onWhite = !onWhite;
-            passed += (speed >= 0 ? 1 : -1);
+            directionStep = (speed >= 0 ? 1 : -1);
+            passed += directionStep;
             // Serial.print(passed);
             // Serial.print(" (deltaT = ");
 
-            deltaT = (millis() - timeOfLastChange) / 1000.0f;
+            deltaT = millis() - timeOfLastChange;
+            divisionPassSpeed = distancePerDivision / deltaT;
             // Serial.print(deltaT);
             // Serial.println(")");
 
@@ -103,7 +98,7 @@ void WheelEncoder::Tick()
             {
                 pointsForFirstMean++;
 
-                speedFromStartMean += distancePerDivision / deltaT;
+                speedFromStartMean += divisionPassSpeed;
                 if (pointsForFirstMean == PASSES_UNTIL_FIRST_MEAN)
                 {
                     speedFromStartMean /= PASSES_UNTIL_FIRST_MEAN;
@@ -112,10 +107,24 @@ void WheelEncoder::Tick()
                 }
             }
 
+            // For a sudden change in speed, reset mean because it might need to be updated rapidly
+            else if (fabs(divisionPassSpeed / speed) > CHANGE_FOR_MEAN_RESET)
+            {
+                resetSpeedMean();
+            }
+
             // After initial speed determined, update using average every pass
             else
             {
-                updateTrueSpeed((speed + distancePerDivision / deltaT) / 2.0f);
+                updateTrueSpeed((speed + DIVISION_MEAN_WEIGHTING * distancePerDivision / deltaT) / (1.0f + DIVISION_MEAN_WEIGHTING));
+            }
+
+            // Also, only update interpolated distance if there has been a change
+            interpolatedDistanceSinceLastDeltaY += speed * deltaT;
+            if (passed % DIVISIONS == 0)
+            {
+                // Because it should only measure distance between revolutions
+                interpolatedDistanceSinceLastDeltaY -= CIRCUMFERENCE * directionStep;
             }
 
             t = millis();
@@ -133,8 +142,7 @@ void WheelEncoder::Tick()
         // Previous motor conversion rate is maintained in this situation
         updateTrueSpeed(0);
 
-        speedFromStartMean = 0;
-        pointsForFirstMean = 0;
+        resetSpeedMean();
 
         timeOfLastChange = millis();
     }
@@ -146,9 +154,15 @@ void WheelEncoder::updateTrueSpeed(double trueSpeed)
 
     // Value probably won't be accurate at lower speeds.
     // Also prevents division by 0
-    if (fabs(speed) > 30)
+    if (fabs(speed) > SPEED_CALIBRATION_THRESHOLD)
     {
         speedMotorValueConversion = (double) motorValue / speed;
     }
+}
+
+void WheelEncoder::resetSpeedMean()
+{
+    pointsForFirstMean = 0;
+    speedFromStartMean = 0;
 }
 
