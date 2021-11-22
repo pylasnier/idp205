@@ -13,6 +13,7 @@
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
 #include <SharpIR.h>
+#include <Servo.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
 
 #include "robot.h"
@@ -28,7 +29,8 @@ enum configuration_t
   LINE_SENSOR = 3,
   IR_RECIEVER = 4,
   SAY_SOMETHING = 5,
-  ALIGNMENT = 6
+  ALIGNMENT = 6,
+  PINCER = 7
 };
 
 int sensorPin = A0;    // select the input pin for the potentiometer
@@ -44,6 +46,9 @@ int low_mama_threshold = 10000;
 int high_mama_threshold = 16000;
 int low_papa_threshold = 18000;
 int high_papa_threshold = 28000;
+int pos = 0;
+int range = 50;
+bool not_moved = true;
 
 unsigned long t; //To measure time
 bool ledOn;
@@ -52,7 +57,7 @@ Adafruit_MotorShield AFSM = Adafruit_MotorShield();
 Adafruit_DCMotor *leftMotor = AFSM.getMotor(3);
 Adafruit_DCMotor *rightMotor = AFSM.getMotor(4);
 
-configuration_t Configuration = ALIGNMENT;     // SET THIS TO MODE YOU WANT TO TEST
+configuration_t Configuration = PINCER;     // SET THIS TO MODE YOU WANT TO TEST
 
 UltrasoundSensor mySensor = UltrasoundSensor(ULTRASOUND_TRIG, ULTRASOUND_ECHO);
 
@@ -62,6 +67,8 @@ LineSensor line2 = LineSensor(A1, 100);
 IRReciever reciever1 = IRReciever(A0);
 
 SharpIR alignment1(1, A2);
+
+Servo pincer;
 
 void setup() {
   switch (Configuration)
@@ -133,6 +140,11 @@ void setup() {
     while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
     }
+  
+  case PINCER:
+    pincer.attach(9);
+    break;
+
   default: break;
   }
 }
@@ -254,6 +266,27 @@ void loop() {
     case ALIGNMENT:
       Serial.println(alignment1.getDistance());
       break;
+
+    case PINCER:
+      if (not_moved)
+      {
+      for (pos = 0; pos <= range; pos += 1)
+        { // goes from 0 degrees to 180 degrees
+        // in steps of 1 degree
+        pincer.write(pos);              // tell servo to go to position in variable 'pos'
+        delay(15);                       // waits 15ms for the servo to reach the position
+        }
+      not_moved = false;
+      }
+    /*
+      for (pos = range; pos >= 0; pos -= 1) 
+        { // goes from 180 degrees to 0 degrees
+        pincer.write(pos);              // tell servo to go to position in variable 'pos'
+        delay(15);  
+        }
+    */
+    //pincer.write(60);  
+    break;
 
     default: break;
   }
