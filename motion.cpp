@@ -24,6 +24,7 @@ void Motion::Begin()
     targetSpeed = 0;
     targetTurnRadius = 0;
     averageTurnRadius = 0;
+    pivotTurnRate = 0;
     bearing = 0;
 }
 
@@ -46,6 +47,11 @@ void Motion::Tick()
     leftWheelEncoder->Tick();
     rightWheelEncoder->Tick();
 
+    // Serial.print("Wheel speeds: ");
+    // Serial.print(leftWheelEncoder->GetSpeed());
+    // Serial.print(" O-O ");
+    // Serial.println(rightWheelEncoder->GetSpeed());
+
     double dt = millis() - t;
     t = millis();
 
@@ -57,21 +63,33 @@ void Motion::Tick()
     {
         update = millis();
 
-        // Difference in wheel speeds calculated using wheel separation compared to turn radius
-        // Wheel speed still positive for negative R because you divide it by itself.
-        // Basically signs handle themselves here
-    
-        if (targetTurnRadius != 0)
+        // From speed an turn radius
+        if (pivotTurnRate == 0)
         {
-            velocityDifference = WHEEL_SEPARATION / (2.0f * targetTurnRadius);
+            // Difference in wheel speeds calculated using wheel separation compared to turn radius
+            if (targetTurnRadius != 0)
+            {
+                velocityDifference = WHEEL_SEPARATION / (2.0f * targetTurnRadius);
+            }
+            else
+            {
+                velocityDifference = 0;
+            }
+
+            rightWheelSpeed = targetSpeed * (1 + velocityDifference);
+            leftWheelSpeed = targetSpeed * (1 - velocityDifference);
         }
+        // If pivoting
         else
         {
-            velocityDifference = 0;
+            // Signs different here than above because positive turn rate
+            // is turning right, but positive R (visually, pointing right from
+            // the circle centre at the left) turns left.
+            // Need to divide by 1000 because speed in m/s but separation given
+            // in mm
+            rightWheelSpeed = -pivotTurnRate * WHEEL_SEPARATION / 2000.0f;
+            leftWheelSpeed = pivotTurnRate * WHEEL_SEPARATION / 2000.0f;
         }
-
-        rightWheelSpeed = targetSpeed * (1 + velocityDifference);
-        leftWheelSpeed = targetSpeed * (1 - velocityDifference);
 
         rightMotorValue = rightWheelEncoder->GetMotorValue(rightWheelSpeed);
         leftMotorValue = leftWheelEncoder->GetMotorValue(leftWheelSpeed);
@@ -102,19 +120,16 @@ void Motion::Tick()
         // Serial.println(" ( / ~70 )");
     }
 
-    // Update bearing if trying to turn
+    // The true turn rate is determined from wheel encoder values,
+    // giving an approximation to the real turn radius for calculations
+    // in the navigation class. When calibrated properly, should closely
+    // match the desired turn radius.
+    turnRate = (leftWheelEncoder->GetSpeed() - rightWheelEncoder->GetSpeed()) / (double) WHEEL_SEPARATION;
+    bearing += turnRate * dt;
+
+    // Update average turn radius if trying to turn
     if (targetTurnRadius != 0)
     {
-        // Minus because +ve R indicates turning left
-        // bearing -= targetSpeed / turnRadius * dt;
-
-        // The true turn rate is determined from wheel encoder values,
-        // giving an approximation to the real turn radius for calculations
-        // in the navigation class. When calibrated properly, should closely
-        // match the desired turn radius.
-        turnRate = (leftWheelEncoder->GetSpeed() - rightWheelEncoder->GetSpeed()) / (double) WHEEL_SEPARATION;
-        bearing += turnRate * dt;
-
         // 0.002f is weighting of turn rate in average with respect to time
         averageTurnRadius = (averageTurnRadius - (GetTrueSpeed() / turnRate) * 0.002f * dt) / (1.0f + 0.002f * dt);
     }
@@ -140,6 +155,7 @@ double Motion::GetTrueSpeed()
 void Motion::SetSpeed(double speed)
 {
     targetSpeed = speed;
+    pivotTurnRate = 0;
 }
 
 double Motion::GetBearing() { return bearing; }
@@ -151,4 +167,12 @@ void Motion::SetTurnRadius(double turnRadius)
 {
     targetTurnRadius = turnRadius;
     averageTurnRadius = targetTurnRadius;
+    pivotTurnRate = 0;
+}
+
+void Motion::SetPivotTurnRate(double turnRate)
+{
+    pivotTurnRate = turnRate;
+    targetSpeed = 0;
+    targetTurnRadius = 0;
 }

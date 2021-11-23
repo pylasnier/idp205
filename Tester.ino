@@ -12,7 +12,7 @@
 
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
-#include <SharpIR.h>
+//#include <SharpIR.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
 
 #include "robot.h"
@@ -52,16 +52,16 @@ Adafruit_MotorShield AFSM = Adafruit_MotorShield();
 Adafruit_DCMotor *leftMotor = AFSM.getMotor(3);
 Adafruit_DCMotor *rightMotor = AFSM.getMotor(4);
 
-configuration_t Configuration = ALIGNMENT;     // SET THIS TO MODE YOU WANT TO TEST
+configuration_t Configuration = LINE_SENSOR;     // SET THIS TO MODE YOU WANT TO TEST
 
 UltrasoundSensor mySensor = UltrasoundSensor(ULTRASOUND_TRIG, ULTRASOUND_ECHO);
 
-LineSensor line1 = LineSensor(A2, 100);
+LineSensor line1 = LineSensor(A0, 100);
 LineSensor line2 = LineSensor(A1, 100);
 
 IRReciever reciever1 = IRReciever(A0);
 
-SharpIR alignment1(1, A2);
+//SharpIR alignment1(1, A2);
 
 void setup() {
   switch (Configuration)
@@ -252,7 +252,7 @@ void loop() {
       break;
     
     case ALIGNMENT:
-      Serial.println(alignment1.getDistance());
+      //Serial.println(alignment1.getDistance());
       break;
 
     default: break;

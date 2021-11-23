@@ -1,7 +1,7 @@
 #ifndef MOTION_H
 #define MOTION_H
 
-#define     WHEEL_SEPARATION            185     // in mm
+#define     WHEEL_SEPARATION            227     // in mm
 #define     VELOCITY_TO_MOTOR_SPEED     60      // Temporary, while we don't have wheel encoders. Calibrate appropriately. In mm/s
 
 #define     MOTOR_UPDATE_PERIOD         100     // ms
@@ -26,6 +26,8 @@ class Motion
         double averageTurnRadius;
         double bearing;
 
+        double pivotTurnRate;
+
         unsigned long t;        // Milliseconds, for integration
         unsigned long update;   // Milliseconds, for time between motor updates
 
@@ -49,6 +51,8 @@ class Motion
         double GetTargetTurnRadius();
         double GetTrueTurnRadius();
         void SetTurnRadius(double);
+
+        void SetPivotTurnRate(double);
 
         void Tick();
 };

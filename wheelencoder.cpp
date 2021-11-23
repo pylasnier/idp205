@@ -50,13 +50,13 @@ double WheelEncoder::GetDeltaY()
 uint16_t WheelEncoder::GetMotorValue(double targetSpeed)
 {
     speed = targetSpeed;
-    motorValue = (uint16_t) (targetSpeed * speedMotorValueConversion);
+    motorValue = (uint16_t) fabs(targetSpeed * speedMotorValueConversion);
 
     return abs(motorValue);
 }
 
-uint16_t WheelEncoder::GetMotorValue() { return abs(motorValue); }
-int WheelEncoder::GetMotorDirection() { return (motorValue >= 0 ? FORWARD : BACKWARD); }
+uint16_t WheelEncoder::GetMotorValue() { return motorValue; }
+int WheelEncoder::GetMotorDirection() { return ((speed * speedMotorValueConversion) >= 0 ? FORWARD : BACKWARD); }
 
 // This Tick updates:
 //  Division passed using threshold to verify pass

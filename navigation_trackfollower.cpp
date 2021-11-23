@@ -15,16 +15,22 @@ Navigation::TrackFollower::TrackFollower(Motion *_motion, LineSensor *_leftLineS
     rightLineSensor = _rightLineSensor;
 
     firstContact = true;
-    navigationState = ON_TRACK;
+    trackFollowerState = ON_TRACK;
     lineBearing = motion->GetBearing();
+
+    leftContact = false;
+    rightContact = false;
+
+    leftInitialChangeTime = millis();
+    rightInitialChangeTime = millis();
 }
 
 Navigation::TrackFollower::TrackFollower() : TrackFollower(new Motion(), new LineSensor(), new LineSensor()) { }
 
 void Navigation::TrackFollower::Tick()
 {
-    bool leftContact;
-    bool rightContact;
+    bool currentLineLeft;
+    bool currentLineRight;
 
     // ON_TRACK case
     double theta;
@@ -43,8 +49,28 @@ void Navigation::TrackFollower::Tick()
 
     if (enabled)
     {
-        leftContact = leftLineSensor->Line();
-        rightContact = rightLineSensor->Line();
+        currentLineLeft = leftLineSensor->Line();
+        currentLineRight = rightLineSensor->Line();
+
+        if (leftContact == currentLineLeft)
+        {
+            leftInitialChangeTime = millis();
+        }
+        else if (millis() - leftInitialChangeTime > LINE_TIME_THRESHOLD)
+        {
+            leftContact = currentLineLeft;
+            leftInitialChangeTime = millis();
+        }
+
+        if (rightContact == currentLineRight)
+        {
+            rightInitialChangeTime = millis();
+        }
+        else if (millis() - rightInitialChangeTime > LINE_TIME_THRESHOLD)
+        {
+            rightContact = currentLineRight;
+            rightInitialChangeTime = millis();
+        }
 
         if (motion->GetTargetSpeed() != CRUISE_SPEED)
         {
@@ -54,10 +80,10 @@ void Navigation::TrackFollower::Tick()
 
         if (leftContact && rightContact)
         {
-            navigationState = DOUBLE_CONTACT;
+            trackFollowerState = DOUBLE_CONTACT;
         }
 
-        switch (navigationState)
+        switch (trackFollowerState)
         {
             case ON_TRACK:
                 // While there is a discrepancy between the robot bearing and the
@@ -96,7 +122,7 @@ void Navigation::TrackFollower::Tick()
                     // initialTheta = contactDirectionMultiplier * (SENSOR_SEPARATION - LINE_THICKNESS) / (2.0f * motion->GetDeltaY());
                     initalBearing = motion->GetBearing();
 
-                    navigationState = CONTACT;
+                    trackFollowerState = CONTACT;
                     Serial.print("Contact! Turn ");
                     Serial.println((leftContact ? "left" : "right"));
                     motion->SetTurnRadius(contactDirectionMultiplier * ON_LINE_TURN_RADIUS);
@@ -129,7 +155,7 @@ void Navigation::TrackFollower::Tick()
                     idealR = (SENSOR_SEPARATION - LINE_THICKNESS) / (newTheta * newTheta);
                     motion->SetTurnRadius(-contactDirectionMultiplier * (idealR < OFF_LINE_TURN_RADIUS ? idealR : OFF_LINE_TURN_RADIUS));
 
-                    navigationState = ON_TRACK;
+                    trackFollowerState = ON_TRACK;
 
                     Serial.print("Back on track; angle discrepancy: ");
                     Serial.print(fabs(newTheta) / PI * 180);
@@ -143,7 +169,7 @@ void Navigation::TrackFollower::Tick()
             
             case DOUBLE_CONTACT:
                 Serial.println("I'M STUCK (DON'T HUG ME I'M SCARED) I.E. DOUBLE CONTACT!!!");
-                navigationState = LOST;
+                trackFollowerState = LOST;
                 break;
             
             case LOST:
@@ -161,7 +187,7 @@ void Navigation::TrackFollower::Enable()
     enabled = true;
     
     firstContact = true;
-    navigationState = ON_TRACK;
+    trackFollowerState = ON_TRACK;
     lineBearing = motion->GetBearing();
 }
 
