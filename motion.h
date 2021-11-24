@@ -54,6 +54,8 @@ class Motion
 
         void SetPivotTurnRate(double);
 
+        void Stop();
+
         void Tick();
 };
 

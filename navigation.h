@@ -31,10 +31,14 @@ class Navigation
         enum navigation_state_t
         {
             CALIBRATING = 0,
-            RESET_CALIBRATION = 1,
-            TRACK_FOLLOWING = 2,
-            DONE_CALIBRATING = 69,
-            PLS360 = 360            // In reality a 180 but 360 noscopes are cool
+            TRACK_FOLLOWING = 1,
+            PLS360 = 2              // Common state, for when sub-classes ask to pivot and wait until it's done
+        };
+
+        enum desired_direction_t
+        {
+            LEFT = 0,
+            RIGHT = 1
         };
 
         class TrackFollower
@@ -49,6 +53,8 @@ class Navigation
                 };
 
                 bool enabled;
+
+                Navigation *enclosingNavigation;
             
                 Motion *motion;
 
@@ -77,7 +83,7 @@ class Navigation
                 unsigned long rightInitialChangeTime;
 
             public:
-                TrackFollower(Motion *, LineSensor *, LineSensor *);
+                TrackFollower(Navigation *, Motion *, LineSensor *, LineSensor *);
                 TrackFollower();
 
                 void Tick();
@@ -86,30 +92,65 @@ class Navigation
                 void Disable();
         };
 
+        class Calibrator
+        {
+            private:
+                enum calibrator_state_t
+                {
+                    CALIBRATING = 0,
+                    RESET_CALIBRATION = 1,
+                    DONE_CALIBRATING = 2
+                };
+
+                Motion *motion;
+
+                Navigation *enclosingNavigation;
+
+                LineSensor *leftLineSensor;
+                LineSensor *rightLineSensor;
+
+                calibrator_state_t calibratorState;
+
+                double calibrationBearing;
+
+                bool leftContact;
+                bool rightContact;
+                bool leftDesired;                   // On calibration, want to go left or right?
+
+                unsigned long initialChangeTime;    // From this time, needs to last until threshold to verify signal
+                unsigned long calibrationWaitTime;
+                unsigned long calibrationTimer;     // Used to see if time exceeds threshold, and reset needed
+
+            public:
+                Calibrator(Navigation *, Motion *, LineSensor *, LineSensor *);
+                Calibrator();
+
+                void Tick();
+
+                void Start(desired_direction_t);
+                bool IsCalibrated();
+        };
+
         Motion *motion;
 
         LineSensor *leftLineSensor;
         LineSensor *rightLineSensor;
 
+        Calibrator calibrator;
         TrackFollower trackFollower;
 
         navigation_state_t navigationState;
+        navigation_state_t lastNavigationState;     // If in a state (e.g. pivot) expected to return to the last state, usually from which some subroutine is called
 
-        double calibrationBearing;
-
-        bool calibrationLeftOnLine;
-        bool calibrationRightOnLine;
-        bool leftDesired;                   // On calibration, want to go left or right?
-
-        unsigned long initialChangeTime;    // From this time, needs to last until threshold to verify signal
-        unsigned long calibrationWaitTime;
-        unsigned long calibrationTimer;     // Used to see if time exceeds threshold, and reset needed
+        double pivotToAngle;
 
     public:
         Navigation(Motion *, LineSensor *, LineSensor */*, UltrasoundSensor*/);
         Navigation();
 
         void Tick();
+
+        void Pivot(double);
 };
 
 #endif

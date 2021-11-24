@@ -4,12 +4,13 @@
 #include "line_detection.h"
 #include "ultrasound.h"
 
-Navigation::TrackFollower::TrackFollower(Motion *_motion, LineSensor *_leftLineSensor, LineSensor *_rightLineSensor)
+Navigation::TrackFollower::TrackFollower(Navigation *navigation, Motion *_motion, LineSensor *_leftLineSensor, LineSensor *_rightLineSensor)
 {
     //distanceSensor = _distanceSensor;
 
     enabled = false;
 
+    enclosingNavigation = navigation;
     motion = _motion;
     leftLineSensor = _leftLineSensor;
     rightLineSensor = _rightLineSensor;
@@ -25,7 +26,7 @@ Navigation::TrackFollower::TrackFollower(Motion *_motion, LineSensor *_leftLineS
     rightInitialChangeTime = millis();
 }
 
-Navigation::TrackFollower::TrackFollower() : TrackFollower(new Motion(), new LineSensor(), new LineSensor()) { }
+Navigation::TrackFollower::TrackFollower() : TrackFollower(new Navigation(), new Motion(), new LineSensor(), new LineSensor()) { }
 
 void Navigation::TrackFollower::Tick()
 {
@@ -111,7 +112,7 @@ void Navigation::TrackFollower::Tick()
                     // If not turning or if, for some bizarre reason, turning the wrong way
                     if (R == 0 || R * theta < -1)
                     {
-                        motion->SetTurnRadius((theta > 0 ? 1 : -1) * OFF_LINE_TURN_RADIUS);
+                        motion->SetTurnRadius((theta > 0 ? OFF_LINE_TURN_RADIUS : -OFF_LINE_TURN_RADIUS));
                     }
                 }
 

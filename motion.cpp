@@ -176,3 +176,13 @@ void Motion::SetPivotTurnRate(double turnRate)
     targetSpeed = 0;
     targetTurnRadius = 0;
 }
+
+void Motion::Stop()
+{
+    SetSpeed(0);
+    SetTurnRadius(0);
+    SetPivotTurnRate(0);
+
+    leftMotor->setSpeed(leftWheelEncoder->GetMotorValue(0));
+    rightMotor->setSpeed(rightWheelEncoder->GetMotorValue(0));
+}
