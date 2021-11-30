@@ -6,19 +6,19 @@
 //https://www.ttelectronics.com/TTElectronics/media/ProductFiles/Datasheets/OPB703-70_70A-70F-B-704.pdf
 class LineSensor
 {
-    private:
+    protected:
         pin_size_t line_sensor_pin;
-        int threshold;
+        // int threshold;
 
     public:
-        LineSensor(pin_size_t, int);
+        LineSensor(pin_size_t);
         LineSensor();
 
-        unsigned long Sensor_reading();
+        // unsigned long Sensor_reading();
         bool Line();
 
         void SetSensorPin(pin_size_t);
-        void SetThreshold(int);
+        // void SetThreshold(int);
 };
 
 #endif

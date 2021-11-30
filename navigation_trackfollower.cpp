@@ -63,6 +63,9 @@ void Navigation::TrackFollower::Tick()
             leftInitialChangeTime = millis();
         }
 
+        // leftContact = currentLineLeft;
+        // rightContact = currentLineRight;
+
         if (rightContact == currentLineRight)
         {
             rightInitialChangeTime = millis();
@@ -73,15 +76,17 @@ void Navigation::TrackFollower::Tick()
             rightInitialChangeTime = millis();
         }
 
-        if (motion->GetTargetSpeed() != CRUISE_SPEED)
+        if (motion->GetTargetSpeed() != CRUISE_SPEED && trackFollowerState != LOST)
         {
             Serial.println("FORWARD!!");
             motion->SetSpeed(CRUISE_SPEED);
         }
 
-        if (leftContact && rightContact)
+        // If the angle from line is large, recalibrate
+        if (leftContact && rightContact && fabs(motion->GetBearing() - lineBearing) > MAX_LINE_ANGLE_DISCREPANCY)
         {
-            trackFollowerState = DOUBLE_CONTACT;
+            Serial.println("Recalibrating");
+            enclosingNavigation->Calibrate((motion->GetBearing() > lineBearing ? LEFT : RIGHT));
         }
 
         switch (trackFollowerState)
@@ -116,7 +121,7 @@ void Navigation::TrackFollower::Tick()
                     }
                 }
 
-                // On contact, make initial guess at theta and start turning
+                // On contact, start turning
                 if (leftContact || rightContact)
                 {
                     contactDirectionMultiplier = (leftContact ? 1 : -1);
@@ -127,6 +132,7 @@ void Navigation::TrackFollower::Tick()
                     Serial.print("Contact! Turn ");
                     Serial.println((leftContact ? "left" : "right"));
                     motion->SetTurnRadius(contactDirectionMultiplier * ON_LINE_TURN_RADIUS);
+                    // motion->GetDeltaY();    // To start deltaY from this point
                 }
                 break;
             
@@ -138,46 +144,40 @@ void Navigation::TrackFollower::Tick()
                 // holding constant weight.
                 if (!(leftContact || rightContact))
                 {
-                    newTheta = motion->GetDeltaY() / (2.0f * motion->GetTrueTurnRadius());
+                    // newTheta = motion->GetDeltaY() / (2.0f * motion->GetTargetTurnRadius());
 
                     if (firstContact)
                     {
                         firstContact = false;
                         // weightedTheta = newTheta;
-                        lineBearing = initalBearing + newTheta;
+                        lineBearing = (initalBearing + motion->GetBearing()) / 2;
                     }
                     else
                     {
                         // weightedTheta = (initialTheta * INITIAL_THETA_WEIGHT + newTheta * DISTANCE_THETA_WEIGHT) / (INITIAL_THETA_WEIGHT + DISTANCE_THETA_WEIGHT);
-                        lineBearing = (lineBearing + initalBearing + newTheta) / 2;
+                        // lineBearing = (lineBearing + initalBearing + motion->GetBearing()) / 3;
+                        if (motion->GetDeltaY() > 30)
+                        {
+                            lineBearing = (lineBearing + initalBearing + motion->GetBearing()) / 3;
+                        }
                     }
                     
                     // Choose R to align centrally with line, but not over typical turn radius off the line
+                    newTheta = lineBearing - motion->GetBearing();
                     idealR = (SENSOR_SEPARATION - LINE_THICKNESS) / (newTheta * newTheta);
                     motion->SetTurnRadius(-contactDirectionMultiplier * (idealR < OFF_LINE_TURN_RADIUS ? idealR : OFF_LINE_TURN_RADIUS));
 
                     trackFollowerState = ON_TRACK;
 
-                    Serial.print("Back on track; angle discrepancy: ");
-                    Serial.print(fabs(newTheta) / PI * 180);
-                    Serial.println(" degrees");
+                    Serial.println("Back on track.");
                     Serial.print("Line bearing: ");
                     Serial.print(lineBearing / PI * 180);
                     Serial.print("; Wheel-e bearing: ");
                     Serial.println(motion->GetBearing() / PI * 180);
                 }
                 break;
-            
-            case DOUBLE_CONTACT:
-                Serial.println("I'M STUCK (DON'T HUG ME I'M SCARED) I.E. DOUBLE CONTACT!!!");
-                trackFollowerState = LOST;
-                break;
-            
-            case LOST:
-                break;
 
             default:
-                Serial.println("No navigation state");
                 break;
         }
     }

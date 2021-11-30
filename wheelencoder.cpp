@@ -28,7 +28,7 @@ WheelEncoder::WheelEncoder(LineSensor *_lineSensor)
     speedMotorValueConversion = INITIAL_CONVERSION_VALUE;
 }
 
-WheelEncoder::WheelEncoder() : WheelEncoder(new LineSensor(PIN_NOT_SET, ENCODER_LINE_THRESHOLD)) { }
+WheelEncoder::WheelEncoder() : WheelEncoder(new LineSensor(PIN_NOT_SET)) { }
 
 unsigned long WheelEncoder::GetDivisionsPassed() { return passed; }
 unsigned long WheelEncoder::GetTimeSinceChange() { return millis() - timeOfLastChange; }
@@ -157,6 +157,7 @@ void WheelEncoder::updateTrueSpeed(double trueSpeed)
     if (fabs(speed) > SPEED_CALIBRATION_THRESHOLD)
     {
         speedMotorValueConversion = (double) motorValue / speed;
+        speedMotorValueConversion = (speedMotorValueConversion > MINIMUM_CONVERSION_VALUE ? speedMotorValueConversion : MINIMUM_CONVERSION_VALUE);
     }
 }
 

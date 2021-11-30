@@ -12,8 +12,8 @@
 
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
-#include <SharpIR.h>
-#include <Servo.h>
+// #include <SharpIR.h>
+// #include <Servo.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
 
 #include "robot.h"
@@ -57,18 +57,18 @@ Adafruit_MotorShield AFSM = Adafruit_MotorShield();
 Adafruit_DCMotor *leftMotor = AFSM.getMotor(3);
 Adafruit_DCMotor *rightMotor = AFSM.getMotor(4);
 
-configuration_t Configuration = LINE_SENSOR;     // SET THIS TO MODE YOU WANT TO TEST
+configuration_t Configuration = IR_RECIEVER;     // SET THIS TO MODE YOU WANT TO TEST
 
-UltrasoundSensor mySensor = UltrasoundSensor(ULTRASOUND_TRIG, ULTRASOUND_ECHO);
+UltrasoundSensor mySensor = UltrasoundSensor(ULTRASOUND_TRIG_PIN, ULTRASOUND_ECHO_PIN);
 
-LineSensor line1 = LineSensor(A0, 100);
-LineSensor line2 = LineSensor(A1, 100);
+LineSensor line1 = LineSensor(LEFT_WHEEL_ENCODER_PIN);
+LineSensor line2 = LineSensor(RIGHT_WHEEL_ENCODER_PIN);
 
 IRReciever reciever1 = IRReciever(A0);
 
 //SharpIR alignment1(1, A2);
 
-Servo pincer;
+// Servo pincer;
 
 void setup() {
   switch (Configuration)
@@ -142,7 +142,7 @@ void setup() {
     }
   
   case PINCER:
-    pincer.attach(9);
+    // pincer.attach(9);
     break;
 
   default: break;
@@ -199,9 +199,9 @@ void loop() {
       break;
 
     case LINE_SENSOR:
-      Serial.print(line1.Sensor_reading());
+      Serial.print(line1.Line());
       Serial.print(" - ");
-      Serial.println(line2.Sensor_reading());
+      Serial.println(line2.Line());
 
       if (line1.Line())
       {
@@ -237,25 +237,25 @@ void loop() {
 
         Serial.println(sum);
 
-        if (sum > low_papa_threshold and sum < high_papa_threshold)
-        {
-          Serial.println("Papa");
-        }
+        // if (sum > low_papa_threshold and sum < high_papa_threshold)
+        // {
+        //   Serial.println("Papa");
+        // }
 
-        else if (sum > low_mama_threshold and sum < high_mama_threshold)
-        {
-          Serial.println("Mama");
-        }
+        // else if (sum > low_mama_threshold and sum < high_mama_threshold)
+        // {
+        //   Serial.println("Mama");
+        // }
 
-        else if (sum > low_baby_threshold and sum < high_baby_threshold)
-        {
-          Serial.println("Baby");
-        }
+        // else if (sum > low_baby_threshold and sum < high_baby_threshold)
+        // {
+        //   Serial.println("Baby");
+        // }
 
-        else
-        {
-          Serial.println("Unknown signal");
-        }
+        // else
+        // {
+        //   Serial.println("Unknown signal");
+        // }
       }
       break;
     
@@ -273,7 +273,7 @@ void loop() {
       for (pos = 0; pos <= range; pos += 1)
         { // goes from 0 degrees to 180 degrees
         // in steps of 1 degree
-        pincer.write(pos);              // tell servo to go to position in variable 'pos'
+        // pincer.write(pos);              // tell servo to go to position in variable 'pos'
         delay(15);                       // waits 15ms for the servo to reach the position
         }
       not_moved = false;

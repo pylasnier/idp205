@@ -10,6 +10,7 @@
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
 #include "wheelencoder.h"
+#include "leds.h"
 
 class Motion
 {
@@ -21,6 +22,8 @@ class Motion
         WheelEncoder *leftWheelEncoder;
         WheelEncoder *rightWheelEncoder;
 
+        Leds *leds;
+
         double targetSpeed;
         double targetTurnRadius;    // R
         double averageTurnRadius;
@@ -31,8 +34,11 @@ class Motion
         unsigned long t;        // Milliseconds, for integration
         unsigned long update;   // Milliseconds, for time between motor updates
 
+        bool forceUpdate;
+        bool isMoving;          // For led mostly
+
     public:
-        Motion(Adafruit_MotorShield *, uint8_t, uint8_t, WheelEncoder *, WheelEncoder *);
+        Motion(Adafruit_MotorShield *, uint8_t, uint8_t, WheelEncoder *, WheelEncoder *, Leds *);
         Motion(uint8_t, uint8_t);
         Motion();
 
@@ -54,6 +60,7 @@ class Motion
 
         void SetPivotTurnRate(double);
 
+        bool IsMoving();
         void Stop();
 
         void Tick();

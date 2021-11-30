@@ -14,10 +14,11 @@ Adafruit_DCMotor *leftMotor = AFSM.getMotor(4);
 Adafruit_DCMotor *rightMotor = AFSM.getMotor(3);
 
 Motion motion = Motion(&AFSM, LEFT_MOTOR_PORT, RIGHT_MOTOR_PORT,
-    new WheelEncoder(new LineSensor(LEFT_WHEEL_ENCODER_PIN, ENCODER_LINE_THRESHOLD)),
-    new WheelEncoder(new LineSensor(RIGHT_WHEEL_ENCODER_PIN, ENCODER_LINE_THRESHOLD)));
+    new WheelEncoder(new LineSensor(LEFT_WHEEL_ENCODER_PIN)),
+    new WheelEncoder(new LineSensor(RIGHT_WHEEL_ENCODER_PIN)),
+    new Leds(AMBER_LED_OUTPUT_PIN, RED_LED_OUTPUT_PIN, GREEN_LED_OUTPUT_PIN));
 
-LineSensor tester = LineSensor(LEFT_WHEEL_ENCODER_PIN, ENCODER_LINE_THRESHOLD);
+LineSensor tester = LineSensor(LEFT_WHEEL_ENCODER_PIN);
 WheelEncoder wheelEncoder = WheelEncoder(&tester);
 
 unsigned long t;
@@ -29,10 +30,13 @@ void setup()
     Serial.println("starting");
 
     motion.Begin();
-    motion.SetSpeed(0.07);
-    // motion.SetTurnRadius(200);
-    // motion.SetPivotTurnRate(0.5);
+    // motion.SetSpeed(0.07);
+    // motion.SetTurnRadius(-200);
+    motion.SetPivotTurnRate(-0.8);
 
+    // AFSM.begin();
+    // leftMotor->setSpeed(255);
+    // leftMotor->run(FORWARD);
 
     Serial.println("running");
     t = millis();
@@ -41,6 +45,7 @@ void setup()
 void loop()
 {
     motion.Tick();
+    // Serial.println("ticking");
     // Serial.print(tester.Line());
     // Serial.print(" (");
     // Serial.print(tester.Sensor_reading());

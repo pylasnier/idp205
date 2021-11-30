@@ -4,7 +4,7 @@
 #include "utility/Adafruit_MS_PWMServoDriver.h"
 #include "wheelencoder.h"
 
-Motion::Motion(Adafruit_MotorShield *_AFSM, uint8_t leftMotorPort, uint8_t rightMotorPort, WheelEncoder *_leftWheelEncoder, WheelEncoder *_rightWheelEncoder)
+Motion::Motion(Adafruit_MotorShield *_AFSM, uint8_t leftMotorPort, uint8_t rightMotorPort, WheelEncoder *_leftWheelEncoder, WheelEncoder *_rightWheelEncoder, Leds *_leds)
 {
     AFSM = _AFSM;
     leftMotor = AFSM->getMotor(leftMotorPort);
@@ -13,8 +13,13 @@ Motion::Motion(Adafruit_MotorShield *_AFSM, uint8_t leftMotorPort, uint8_t right
     leftWheelEncoder = _leftWheelEncoder;
     rightWheelEncoder = _rightWheelEncoder;
 
+    leds = _leds;
+
     t = millis();
     update = millis();
+
+    forceUpdate = false;
+    isMoving = false;
 }
 
 void Motion::Begin()
@@ -28,7 +33,7 @@ void Motion::Begin()
     bearing = 0;
 }
 
-Motion::Motion(uint8_t leftMotorPort, uint8_t rightMotorPort) : Motion(new Adafruit_MotorShield(), leftMotorPort, rightMotorPort, new WheelEncoder(), new WheelEncoder()) { }
+Motion::Motion(uint8_t leftMotorPort, uint8_t rightMotorPort) : Motion(new Adafruit_MotorShield(), leftMotorPort, rightMotorPort, new WheelEncoder(), new WheelEncoder(), new Leds()) { }
 
 Motion::Motion() : Motion(PIN_NOT_SET, PIN_NOT_SET) { }
 
@@ -59,8 +64,9 @@ void Motion::Tick()
 
     
     // Updating wheel motors based on wheel encoder information
-    if (millis() - update > MOTOR_UPDATE_PERIOD)
+    if (millis() - update > MOTOR_UPDATE_PERIOD || forceUpdate)
     {
+        forceUpdate = false;
         update = millis();
 
         // From speed an turn radius
@@ -125,13 +131,25 @@ void Motion::Tick()
     // in the navigation class. When calibrated properly, should closely
     // match the desired turn radius.
     turnRate = (leftWheelEncoder->GetSpeed() - rightWheelEncoder->GetSpeed()) / (double) WHEEL_SEPARATION;
-    bearing += turnRate * dt;
+    bearing += turnRate * dt * 1.07;
 
     // Update average turn radius if trying to turn
     if (targetTurnRadius != 0)
     {
+        // bearing -= GetTrueSpeed() / targetTurnRadius * dt;
         // 0.002f is weighting of turn rate in average with respect to time
         averageTurnRadius = (averageTurnRadius - (GetTrueSpeed() / turnRate) * 0.002f * dt) / (1.0f + 0.002f * dt);
+    }
+
+    if (isMoving && targetSpeed == 0 && pivotTurnRate == 0)
+    {
+        leds->MovingStop();
+        isMoving = false;
+    }
+    else if (!isMoving && (targetSpeed != 0 || pivotTurnRate != 0))
+    {
+        leds->MovingStart();
+        isMoving = true;
     }
 }
 
@@ -156,6 +174,9 @@ void Motion::SetSpeed(double speed)
 {
     targetSpeed = speed;
     pivotTurnRate = 0;
+
+    forceUpdate = true;
+    Tick();
 }
 
 double Motion::GetBearing() { return bearing; }
@@ -167,7 +188,13 @@ void Motion::SetTurnRadius(double turnRadius)
 {
     targetTurnRadius = turnRadius;
     averageTurnRadius = targetTurnRadius;
-    pivotTurnRate = 0;
+
+    // Should not affect pivoting, and shouldn't force update before setting speed after stop
+    if (targetSpeed != 0)
+    {
+        forceUpdate = true;
+        Tick();
+    }
 }
 
 void Motion::SetPivotTurnRate(double turnRate)
@@ -175,6 +202,9 @@ void Motion::SetPivotTurnRate(double turnRate)
     pivotTurnRate = turnRate;
     targetSpeed = 0;
     targetTurnRadius = 0;
+
+    forceUpdate = true;
+    Tick();
 }
 
 void Motion::Stop()
@@ -183,6 +213,8 @@ void Motion::Stop()
     SetTurnRadius(0);
     SetPivotTurnRate(0);
 
-    leftMotor->setSpeed(leftWheelEncoder->GetMotorValue(0));
-    rightMotor->setSpeed(rightWheelEncoder->GetMotorValue(0));
+    forceUpdate = true;
+    Tick();
 }
+
+bool Motion::IsMoving() { return isMoving; }

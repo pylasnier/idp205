@@ -16,6 +16,7 @@
 #define     SPEED_CALIBRATION_THRESHOLD 0.03    // m/s
 
 #define     INITIAL_CONVERSION_VALUE    37000   // Gave approx 0.11 m/s for max motor output
+#define     MINIMUM_CONVERSION_VALUE    25000
 
 #define     ENCODER_LINE_THRESHOLD      75
 

@@ -3,9 +3,6 @@
 
 #include <Wire.h>
 
-#define     ULTRASOUND_TRIG     1      // Digital I/O output pin
-#define     ULTRASOUND_ECHO     2      // Digital I/O input pin
-
 #define     TRIGGER_INPUT_PULSE_LENGTH      10      // Length of trigger pulse in microseconds
 #define     DELAY_WAIT_LENGTH               60000   // Length of delay in microseconds
 #define     TIMEOUT_LENGTH                  20000   // Length before sensor times out

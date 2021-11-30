@@ -81,11 +81,6 @@ unsigned long UltrasoundSensor::GetDistance()
 
 void UltrasoundSensor::SetTrigPin(pin_size_t _ultrasound_trig)
 {
-    if (ultrasound_trig != PIN_NOT_SET)
-    {
-        pinMode(ultrasound_trig, INPUT);
-    }
-
     ultrasound_trig = _ultrasound_trig;
 
     if (ultrasound_trig != PIN_NOT_SET)

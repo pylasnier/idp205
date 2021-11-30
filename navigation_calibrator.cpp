@@ -8,12 +8,16 @@ Navigation::Calibrator::Calibrator(Navigation *navigation, Motion *_motion, Line
     rightLineSensor = _rightLineSensor;
 
     calibratorState = DONE_CALIBRATING;
+
+    waitingOnPivot = false;
 }
 
 Navigation::Calibrator::Calibrator() : Calibrator(new Navigation(), new Motion(), new LineSensor(), new LineSensor()) { }
 
 void Navigation::Calibrator::Tick()
 {
+    double angleDiscrepancy;
+
     bool currentLineLeft = leftLineSensor->Line();
     bool currentLineRight = rightLineSensor->Line();
 
@@ -23,6 +27,16 @@ void Navigation::Calibrator::Tick()
             if (motion->GetTargetSpeed() != CRUISE_SPEED)
             {
                 motion->SetSpeed(CRUISE_SPEED);
+            }
+            if (motion->GetTargetTurnRadius() != 0)
+            {
+                motion->SetTurnRadius(0);
+            }
+
+            if (waitingOnPivot)
+            {
+                calibrationTimer = millis();
+                waitingOnPivot = false;
             }
 
             // This section waits for a confident line detection then sets which sensor hit
@@ -40,7 +54,12 @@ void Navigation::Calibrator::Tick()
                         leftContact = currentLineLeft;
                         rightContact = currentLineRight;
 
+                        // Start deltaY measurement
                         motion->GetDeltaY();
+
+                        Serial.print("Contact ");
+                        Serial.print((leftContact ? "left" : "right"));
+                        Serial.println(". Wait until next contact");
                     }
                 }
 
@@ -51,6 +70,7 @@ void Navigation::Calibrator::Tick()
                     calibrationTimer = millis();
 
                     enclosingNavigation->Pivot((motion->GetBearing() > 0 ? -PI : PI)); // Will turn left or right depending on bearing. Keeps it around 0 and not off far
+                    waitingOnPivot = true;
                 }
                 else
                 {
@@ -61,31 +81,7 @@ void Navigation::Calibrator::Tick()
             // Now align with line based on bearing previously set
             else if (leftContact && rightContact)
             {
-                if (fabs(calibrationBearing - motion->GetBearing()) < STRAIGHT_THETA_MARGIN)
-                {
-                    motion->Stop();
-                    calibratorState = DONE_CALIBRATING;
-                }
-                else
-                {
-                    // Go forwards or backwards, depending on which sensor falls off line
-                    // and which way we wanted to go (left or right)
-                    if (currentLineLeft && !currentLineRight)
-                    {
-                        motion->SetTurnRadius(0);
-                        motion->SetSpeed(leftDesired ? CRUISE_SPEED : -CRUISE_SPEED);
-                    }
-                    else if (!currentLineLeft && currentLineRight)
-                    {
-                        motion->SetTurnRadius(0);
-                        motion->SetSpeed(leftDesired ? -CRUISE_SPEED : CRUISE_SPEED);
-                    }
-
-                    else
-                    {
-                        motion->SetPivotTurnRate((calibrationBearing > motion->GetBearing() ? DEFAULT_PIVOT_TURN_RATE : -DEFAULT_PIVOT_TURN_RATE));
-                    }
-                }
+                calibratorState = DONE_CALIBRATING;
             }
 
             // Once first contact has been established. Effectively XOR because AND case above
@@ -96,15 +92,18 @@ void Navigation::Calibrator::Tick()
                 {
                     if (millis() - initialChangeTime > LINE_TIME_THRESHOLD)
                     {
-                        // Calculate angle it hits line at, set bearing
-                        calibrationBearing = motion->GetBearing() + (leftDesired ? -PI : PI) / 2.0f + (leftContact ? -1 : 1) * atan(motion->GetDeltaY() / (double) SENSOR_SEPARATION);
+                        angleDiscrepancy = (leftContact ? -1 : 1) * atan(motion->GetDeltaY() / (double) SENSOR_SEPARATION);
+
+                        // Right if greater, left if smaller
+                        enclosingNavigation->Pivot((leftDesired ? -PI : PI) / 2.0f + angleDiscrepancy);
 
                         // This takes us to the above else if statement
                         leftContact = true;
                         rightContact = true;
 
-                        // Right if greater, left if smaller
-                        motion->SetPivotTurnRate((calibrationBearing > motion->GetBearing() ? DEFAULT_PIVOT_TURN_RATE : -DEFAULT_PIVOT_TURN_RATE));
+                        Serial.println("Double contact! Start turning");
+                        Serial.print("Angle discrepancy: ");
+                        Serial.println(angleDiscrepancy * 180.0f / PI);
                     }
                 }
 

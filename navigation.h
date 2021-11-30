@@ -4,7 +4,7 @@
 #define     SENSOR_SEPARATION       25      // 'd' in analysis. Given in mm
 #define     LINE_THICKNESS          17      // 't' in analysis. Given in mm
 
-#define     ON_LINE_TURN_RADIUS     50      // 'R' in analysis, should be less than dt/(d-t). Can use smaller theoretical d. Given in mm
+#define     ON_LINE_TURN_RADIUS     150      // 'R' in analysis, should be less than dt/(d-t). Can use smaller theoretical d. Given in mm
 #define     OFF_LINE_TURN_RADIUS    200     // 'R' in analysis, but for off line; 2000 is reasonable limit. Given in mm
 
 #define     CRUISE_SPEED            0.08    // 'v' in analysis. Given in mm/s
@@ -15,9 +15,11 @@
 
 #define     STRAIGHT_THETA_MARGIN   0.02f   // Margin of theta for which robot is considered straight
 
-#define     LINE_TIME_THRESHOLD     20      // ms
+#define     LINE_TIME_THRESHOLD     5       // ms
 #define     CALIBRATION_RESET_WAIT_TIME         2000    // ms
-#define     NAVIGATION_LINE_THRESHOLD   250
+#define     NAVIGATION_LINE_THRESHOLD   130
+
+#define     MAX_LINE_ANGLE_DISCREPANCY  0.75
 
 #include <Wire.h>
 #include "motion.h"
@@ -25,20 +27,25 @@
 #include "ultrasound.h"
 
 
+enum desired_direction_t
+{
+    LEFT = 0,
+    RIGHT = 1
+};
+
 class Navigation
 {
     private:
         enum navigation_state_t
         {
-            CALIBRATING = 0,
-            TRACK_FOLLOWING = 1,
-            PLS360 = 2              // Common state, for when sub-classes ask to pivot and wait until it's done
+            TRACK_FOLLOWING = 0,
+            STOPPED = 1
         };
 
-        enum desired_direction_t
+        enum pivot_state_t
         {
-            LEFT = 0,
-            RIGHT = 1
+            PIVOTING = 0,
+            TRANSLATING = 1
         };
 
         class TrackFollower
@@ -121,6 +128,8 @@ class Navigation
                 unsigned long calibrationWaitTime;
                 unsigned long calibrationTimer;     // Used to see if time exceeds threshold, and reset needed
 
+                bool waitingOnPivot;
+
             public:
                 Calibrator(Navigation *, Motion *, LineSensor *, LineSensor *);
                 Calibrator();
@@ -136,12 +145,15 @@ class Navigation
         LineSensor *leftLineSensor;
         LineSensor *rightLineSensor;
 
-        Calibrator calibrator;
-        TrackFollower trackFollower;
+        Calibrator *calibrator;
+        TrackFollower *trackFollower;
 
         navigation_state_t navigationState;
         navigation_state_t lastNavigationState;     // If in a state (e.g. pivot) expected to return to the last state, usually from which some subroutine is called
 
+        bool isCalibrating;
+        bool isPivoting;
+        pivot_state_t pivotState;
         double pivotToAngle;
 
     public:
@@ -150,7 +162,11 @@ class Navigation
 
         void Tick();
 
+        void StartTrackFollowing();
         void Pivot(double);
+        void Calibrate(desired_direction_t);
+
+        void Stop();
 };
 
 #endif
