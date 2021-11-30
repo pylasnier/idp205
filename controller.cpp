@@ -54,13 +54,16 @@ void Controller::Tick()
                     }
                 }
 
-                Serial.print("Samples: ");
-                Serial.println(sampleCount);
+                Serial.print("Distance: ");
+                Serial.print(ultrasoundSensor->GetDistance());
+                Serial.print("   Samples: ");
+                Serial.print(sampleCount);
+                Serial.print("   Values: ");
                 Serial.print(tsopSampleSum);
                 Serial.print(" - ");
-                Serial.println(phototransistorSampleSum);
-                Serial.print("Ratio: ");
-                Serial.println((double) phototransistorSampleSum / (double) tsopSampleSum);
+                Serial.print(phototransistorSampleSum);
+                Serial.print("   Ratio: ");
+                Serial.println((double) tsopSampleSum / (double) phototransistorSampleSum);
                 break;
         }
 
