@@ -21,7 +21,7 @@
 #define     ULTRASOUND_TRIG_PIN     6      // Digital I/O output pin
 #define     ULTRASOUND_ECHO_PIN     7      // Digital I/O input pin
 
-#define     ALIGNMENT_SENSOR_PIN    A2
+#define     ALIGNMENT_SENSOR_PIN    16      // Equivalent to A2, but for digital operations
 
 #define     PUSH_BUTTON_INPUT_PIN   8
 
