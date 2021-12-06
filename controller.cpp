@@ -24,6 +24,7 @@ void Controller::Tick()
 
     if (started)
     {
+        // Tick all time-dependant components
         ultrasoundSensor->Tick();
         navigation->Tick();
         motion->Tick();
@@ -38,8 +39,10 @@ void Controller::Tick()
             }
         }
 
+        // Servo control co-routines
         else if (pickingUp)
         {
+            // Only attempts to update the servo once every so often (still very often)
             if (millis() - pickingTimer > SERVO_DELAY_TIME)
             {
                 pickingTimer = millis();
@@ -96,9 +99,11 @@ void Controller::Tick()
             }
         }
 
+        // Main switch, each stage of the journey is controlled here
         else switch (controllerState)
         {
             case FIRST_EMBARKMENT:
+                // Check IR in case what ultrasound is detecting is the ramp, and not a dummy
                 if (ultrasoundSensor->GetDistance() < 50 && analogRead(IR_DETECTOR_INPUT_PIN) < 900)
                 {
                     navigation->Stop();
@@ -165,6 +170,8 @@ void Controller::Tick()
 
                 if (millis() - t > DUMMY_IDENTIFICATION_WAIT_TIME)
                 {
+                    // The robot isn't close enough to pick up the dummy at this point.
+                    // It moves forward until it is
                     controllerState = DUMMY_PICKUP;
                     navigation->StartTrackFollowing();
                 }
@@ -178,6 +185,7 @@ void Controller::Tick()
                     Serial.println("Picking up!");
                     if (picked)
                     {
+                        // Depending on the dummy, the robot may need to turn back
                         if (dummy == BABY)
                         {
                             Serial.println("Extracting baby!");
@@ -188,6 +196,10 @@ void Controller::Tick()
                         {
                             Serial.println("Ain't no baby, i'm heading back");
                             controllerState = ON_TRACK_DUMMY_RECALIBRATION;
+                            // This is a repeated set of lines you will see more of.
+                            // Pivoting 180 degrees is inconsistent, so instead the robot
+                            // Turns off and away backwards to 90 degrees then tries to find
+                            // the line again, which it can do consistently from about 90 degrees
                             motion->SetSpeed(-CRUISE_SPEED);
                             motion->SetTurnRadius(ON_LINE_TURN_RADIUS);
                             targetAngle = motion->GetBearing() + PI / 2.0f;
@@ -200,6 +212,7 @@ void Controller::Tick()
                 if (fabs(motion->GetBearing() - targetAngle) < STRAIGHT_THETA_MARGIN)
                 {
                     navigation->StartTrackFollowing();
+                    // This is the second part to the repeated lines from above
                     navigation->Calibrate(RIGHT);
                     controllerState = DUMMY_EXTRACTION;
                 }
@@ -211,6 +224,9 @@ void Controller::Tick()
                     navigation->Stop();
                     motion->Stop();
                     Serial.println("Reached junction");
+                    // Branch in procedure where the baby dummy can be dropped off immediately,
+                    // but the others are in boxes on either side of the junction which need to be
+                    // traversed to next (parent drop-off)
                     if (dummy == BABY)
                     {
                         DropOff();
@@ -237,6 +253,10 @@ void Controller::Tick()
                 break;
             
             case PARENT_DROPOFF:
+                // This is probably where the bug in competition was,
+                // this code doesn't wait at all before checking again if
+                // it is on a junction. It still is so immediately stops.
+                // Also forgot to drop the dummy off at all, so nothing happens
                 if (navigation->IsAtJunction())
                 {
                     navigation->Stop();
@@ -273,6 +293,9 @@ void Controller::Tick()
                 break;
             
             case THE_LONG_JOURNEY_BACK:
+                // Depending on where we came from, we may need to pass
+                // a junction before reaching the final box, which must
+                // be tracked
                 Serial.println("On my way back");
                 if (navigation->IsAtJunction())
                 {
@@ -292,6 +315,7 @@ void Controller::Tick()
                 break;
             
             case BOX_ME:
+                // Gets in box sufficiently
                 if (motion->GetDistance() - lastDistance > 220)
                 {
                     navigation->Stop();
@@ -334,6 +358,7 @@ void Controller::Tick()
     // }
 }
 
+// Red button
 void Controller::Start()
 {
     if (!started)
@@ -371,6 +396,7 @@ void Controller::Pause(unsigned long pauseTime)
     pauseTimer = pauseTime;
 }
 
+// These methods initialise the dummy pick-up/drop-off coroutines
 void Controller::PickUp()
 {
     if (!picked)
