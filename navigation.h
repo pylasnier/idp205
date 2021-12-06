@@ -97,6 +97,8 @@ class Navigation
 
                 void Enable();
                 void Disable();
+
+                bool IsAtJunction();
         };
 
         class Calibrator
@@ -165,6 +167,8 @@ class Navigation
         void StartTrackFollowing();
         void Pivot(double);
         void Calibrate(desired_direction_t);
+
+        bool IsAtJunction();
 
         void Stop();
 };

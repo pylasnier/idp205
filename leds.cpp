@@ -29,8 +29,8 @@ Leds::Leds() : Leds(PIN_NOT_SET, PIN_NOT_SET, PIN_NOT_SET) { }
 
 void Leds::SetDummy(dummy_t dummy)
 {
-    digitalWrite(redLedPin, (dummy == BABY || dummy == PAPA ? HIGH : LOW));
-    digitalWrite(greenLedPin, (dummy == MAMA || dummy == PAPA ? HIGH : LOW));
+    digitalWrite(redLedPin, (dummy == PAPA || dummy == BABY ? HIGH : LOW));
+    digitalWrite(greenLedPin, (dummy == MAMA || dummy == BABY ? HIGH : LOW));
 }
 
 void Leds::Tick()

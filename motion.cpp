@@ -131,7 +131,7 @@ void Motion::Tick()
     // in the navigation class. When calibrated properly, should closely
     // match the desired turn radius.
     turnRate = (leftWheelEncoder->GetSpeed() - rightWheelEncoder->GetSpeed()) / (double) WHEEL_SEPARATION;
-    bearing += turnRate * dt * 1.07;
+    bearing += turnRate * dt * 0.95;
 
     // Update average turn radius if trying to turn
     if (targetTurnRadius != 0)

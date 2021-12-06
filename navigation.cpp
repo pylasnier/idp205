@@ -125,3 +125,8 @@ void Navigation::Stop()
     motion->Stop();
     navigationState = STOPPED;
 }
+
+bool Navigation::IsAtJunction()
+{
+    return trackFollower->IsAtJunction();
+}

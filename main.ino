@@ -15,8 +15,6 @@ Motion *motion;
 Navigation *navigation;
 Controller *controller;
 
-bool start = false;
-
 void setup()
 {
     Serial.begin(DEFAULT_BAUD_RATE);
@@ -48,7 +46,6 @@ void loop()
     if (digitalRead(PUSH_BUTTON_INPUT_PIN) == HIGH)
     {
         controller->Start();
-        Serial.println("BUTTON");
     }
 }
 

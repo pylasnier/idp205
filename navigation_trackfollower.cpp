@@ -196,3 +196,8 @@ void Navigation::TrackFollower::Disable()
 {
     enabled = false;
 }
+
+bool Navigation::TrackFollower::IsAtJunction()
+{
+    return leftContact && rightContact && fabs(motion->GetBearing() - lineBearing) < MAX_LINE_ANGLE_DISCREPANCY;
+}
